@@ -26,6 +26,51 @@ public class Tank{
 		this.direction = direction;
 	}
 
+	//向上移动，参数是速度
+	public void moveUp(int speed){
+		setDirection(Tank.UP);
+		if(y- speed <= 0){
+			y = 0;
+		}else{
+			y -= speed;
+		}
+		setY(y);
+	}
+
+	//向下移动
+	public void moveDown(int speed){
+		setDirection(Tank.DOWN);
+		if(x + 60 + speed >= 600){
+			y = 600 - 60;
+		}else{
+			y += speed;
+		}
+		setY(y);
+	}
+	
+	//向右移动
+	public void moveRight(int speed){
+		setDirection(Tank.RIGHT);
+		if(x + 50 + speed >= 600){
+			x = 600 - 50;
+		}else{
+			x += speed;
+		}
+		setX(x);
+	}
+	
+	public void moveLeft(int speed){
+		setDirection(Tank.LEFT);
+		if(x - 10 - speed <= 0){
+			x = 0;
+		}else{
+			x -= speed;
+		}
+		setX(x);
+	}
+
+
+	//getter\setter
 	public int getX(){
 		return x;
 	}

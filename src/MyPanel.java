@@ -111,40 +111,16 @@ public class MyPanel extends JPanel implements KeyListener{//我的画板
 		int tankX = tank.getX();
 		switch(receive){
 			case KeyEvent.VK_DOWN:
-				tank.setDirection(Tank.DOWN);
-				if(tankY + 60 + TANK_SPEED >= 600){
-					tankY = 600 - 60;
-				}else{
-					tankY += TANK_SPEED;
-				}
-				tank.setY(tankY);
+				tank.moveDown(TANK_SPEED);
 				break;
 			case KeyEvent.VK_UP:
-				tank.setDirection(Tank.UP);
-				if(tankY - TANK_SPEED <= 0){
-					tankY = 0;
-				}else{
-					tankY -= TANK_SPEED;
-				}
-				tank.setY(tankY);
+				tank.moveUp(TANK_SPEED);
 				break;
 			case KeyEvent.VK_RIGHT:
-				tank.setDirection(Tank.RIGHT);
-				if(tankX + 50 + TANK_SPEED >= 600){
-					tankX = 600 - 50;
-				}else{
-					tankX += TANK_SPEED;
-				}
-				tank.setX(tankX);
+				tank.moveRight(TANK_SPEED);
 				break;
 			case KeyEvent.VK_LEFT:
-				tank.setDirection(Tank.LEFT);
-				if(tankX - 10 - TANK_SPEED <= 0){
-					tankX = 0;
-				}else{
-					tankX -= TANK_SPEED;
-				}
-				tank.setX(tankX);
+				tank.moveLeft(TANK_SPEED);
 				break;
 		}
 		this.repaint();
