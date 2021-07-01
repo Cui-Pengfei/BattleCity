@@ -2,18 +2,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.Vector;
 
 /**
  * @author CPF 创建于： 2021/7/1 10:34
  * @version 1.0
  */
 public class MyPanel extends JPanel implements KeyListener{//我的画板
-	private int DEFAULT_X = 200;//坦克坐标
-	private int DEFAULT_Y = 200;
+	private final int DEFAULT_X = 200;//坦克坐标
+	private final int DEFAULT_Y = 200;
 
-	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//本画板上坦克的接收器
-
-
+	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//本画板上可操控的坦克
 
 
 	@Override
@@ -22,22 +21,31 @@ public class MyPanel extends JPanel implements KeyListener{//我的画板
 		g.setColor(Color.DARK_GRAY);//设置画板的背景颜色
 		g.fillRect(0, 0, 800, 800);
 
+		//三辆敌方向下坦克
+		Enemy enemy = new Enemy();
+		Vector<Enemy> army = enemy.army(10);
+		for(Enemy enemy1 : army){
+			drawTank(g, enemy1);
+		}
+
+		//一辆我方坦克向上 可移动
 		drawTank(g, tank.getX(), tank.getY(), tank.getDirection(), tank.getType());
 
 	}
 
-	public void drawTank(Graphics g, int x, int y, int direction, int type){
+	public void drawTank(Graphics g, Tank tank){//接收坦克直接绘制坦克
+		drawTank(g, tank.getX(),tank.getY(),tank.getDirection(),tank.getType());
+	}
+
+	public void drawTank(Graphics g, int x, int y, int direction, int type){//坐标绘制
 		switch(type){
 			case Tank.HERO://我方坦克
-				tank = new Hero(x, y, direction);
 				g.setColor(Color.cyan);
 				break;
 			case Tank.ENEMY://敌方普通坦克
-				tank = new Enemy(x, y, direction);
 				g.setColor(Color.orange);
 				break;
 			case Tank.BOSS://敌方boss坦克
-				tank = new Boss(x, y, direction);
 				g.setColor(Color.RED);
 				break;
 			default:
@@ -94,8 +102,6 @@ public class MyPanel extends JPanel implements KeyListener{//我的画板
 				g.setColor(Color.orange);
 				g.drawLine(x + 20, y + 30, x + 50, y + 30);//炮管
 				break;
-
-
 			default:
 				System.out.println("其他方向暂时没有绘制...");
 
@@ -106,8 +112,6 @@ public class MyPanel extends JPanel implements KeyListener{//我的画板
 	@Override
 	public void keyPressed(KeyEvent e){
 		int receive = e.getKeyCode();
-		int tankY = tank.getY();
-		int tankX = tank.getX();
 		switch(receive){
 			case KeyEvent.VK_DOWN:
 				tank.moveDown();

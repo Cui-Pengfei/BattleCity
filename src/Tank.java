@@ -19,7 +19,10 @@ public class Tank{
 	private int y;//坦克的纵坐标
 	private int direction;//坦克炮口指向的方向（上下左右）
 	private int type;//坦克的种类（我方、敌方、boss）
-	public static int speed = 3;
+	private int speed = 5;//坦克的速度
+
+	public Tank(){
+	}
 
 	public Tank(int x, int y, int direction){
 		this.x = x;
@@ -78,6 +81,14 @@ public class Tank{
 
 	public void setX(int x){
 		this.x = x;
+	}
+
+	public int getSpeed(){
+		return speed;
+	}
+
+	public void setSpeed(int speed){
+		this.speed = speed;
 	}
 
 	public int getY(){

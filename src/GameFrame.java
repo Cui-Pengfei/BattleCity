@@ -1,6 +1,4 @@
 import javax.swing.*;
-import java.awt.*;
-
 /**
  * @author CPF 创建于： 2021/7/1 11:02
  * @version 1.0
