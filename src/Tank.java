@@ -1,0 +1,59 @@
+/**
+ * @author CPF 创建于： 2021/7/1 9:46
+ * @version 1.0
+ */
+public class Tank{
+	//规定坦克方向与对应的数字
+	public static final int UP = 0;
+	public static final int DOWN = 1;
+	public static final int LEFT = 3;
+	public static final int RIGHT = 4;
+
+	//规定坦克种类与对应的数字
+	public static final int HERO = 0;//我方坦克
+	public static final int ENEMY = 1;//敌方普通坦克
+	public static final int BOSS = 2;//敌方boss坦克
+
+
+	private int x;//坦克的横坐标
+	private int y;//坦克的纵坐标
+	private int direction;//坦克炮口指向的方向（上下左右）
+	private int type;//坦克的种类（我方、敌方、boss）
+
+	public Tank(int x, int y, int direction){
+		this.x = x;
+		this.y = y;
+	}
+
+	public int getX(){
+		return x;
+	}
+
+	public void setX(int x){
+		this.x = x;
+	}
+
+	public int getY(){
+		return y;
+	}
+
+	public void setY(int y){
+		this.y = y;
+	}
+
+	public int getDirection(){
+		return direction;
+	}
+
+	public void setDirection(int direction){
+		this.direction = direction;
+	}
+
+	public int getType(){
+		return type;
+	}
+
+	public void setType(int type){
+		this.type = type;
+	}
+}

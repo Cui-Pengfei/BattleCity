@@ -1,0 +1,3 @@
+1. 画坦克需要画板JPanel            要自定义画板
+2. JPanel需要装入框架JFrame        游戏主界面类应该继承JFrame
+3.
