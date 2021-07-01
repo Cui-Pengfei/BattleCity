@@ -1,12 +1,23 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 /**
  * @author CPF 创建于： 2021/7/1 10:34
  * @version 1.0
  */
-public class MyPanel extends JPanel{//我的画板
+@SuppressWarnings({"all"})
+public class MyPanel extends JPanel implements KeyListener{//我的画板
 	private Tank tank = null;
+	private int tankX = 200;//坦克坐标
+	private int tankY = 200;
+	private int tankType = Tank.HERO;//坦克类型 默认值HERO
+	private int tankDirect = Tank.UP;//坦克方向 ，默认值UP
+
+	public static int TANK_SPEED = 3;
+
+
 
 
 	@Override
@@ -15,10 +26,8 @@ public class MyPanel extends JPanel{//我的画板
 		g.setColor(Color.DARK_GRAY);//设置画板的背景颜色
 		g.fillRect(0, 0, 800, 800);
 
-		drawTank(g, 100, 200, Tank.UP, Tank.HERO);
-		drawTank(g, 200, 200, Tank.DOWN, Tank.ENEMY);
-		drawTank(g, 300, 200, Tank.LEFT, Tank.HERO);
-		drawTank(g, 400, 200, Tank.RIGHT, Tank.BOSS);
+		drawTank(g, tankX, tankY, tankDirect, tankType);
+		
 	}
 
 	public void drawTank(Graphics g, int x, int y, int direction, int type){
@@ -77,7 +86,7 @@ public class MyPanel extends JPanel{//我的画板
 				g.drawLine(x + 20, y + 30, x - 10, y + 30);//炮管
 				break;
 
-			case Tank.RIGHT:
+			case Tank.RIGHT://炮口朝右的坦克
 				g.fill3DRect(x - 10, y + 10, 60, 10, false);//车轮
 				g.fill3DRect(x - 10, y + 40, 60, 10, false);//车轮
 				g.fill3DRect(x, y + 20, 40, 20, false);//车体
@@ -96,5 +105,56 @@ public class MyPanel extends JPanel{//我的画板
 
 
 		}
+	}//end drawTank
+
+	@Override
+	public void keyPressed(KeyEvent e){
+		int receive = e.getKeyCode();
+		switch(receive){
+			case KeyEvent.VK_DOWN:
+				tankDirect = Tank.DOWN;
+				if(tankY + 60 + TANK_SPEED >= 600){
+					tankY = 600 - 60;
+				}else{
+					tankY += TANK_SPEED;
+				}
+				break;
+			case KeyEvent.VK_UP:
+				tankDirect = Tank.UP;
+				if(tankY - TANK_SPEED <= 0){
+					tankY = 0;
+				}else{
+					tankY -= TANK_SPEED;
+				}
+				break;
+			case KeyEvent.VK_RIGHT:
+				tankDirect = Tank.RIGHT;
+				if(tankX + 50 + TANK_SPEED >= 600){
+					tankX = 600 - 50;
+				}else{
+					tankX += TANK_SPEED;
+				}
+				break;
+			case KeyEvent.VK_LEFT:
+				tankDirect = Tank.LEFT;
+				if(tankX - 10 - TANK_SPEED <= 0){
+					tankX = 0;
+				}else{
+					tankX -= TANK_SPEED;
+				}
+				break;
+		}
+		this.repaint();
+
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e){
+
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e){
+
 	}
 }

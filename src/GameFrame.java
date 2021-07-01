@@ -14,8 +14,9 @@ public class GameFrame extends JFrame{
 
 	public GameFrame(){
 		MyPanel mp = new MyPanel();
+		this.addKeyListener(mp);//把画板加入事件监听
 		this.add(mp);
-		this.setSize(800,800);
+		this.setSize(600,600);
 		this.setVisible(true);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
