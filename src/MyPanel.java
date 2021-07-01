@@ -10,7 +10,6 @@ import java.awt.event.KeyListener;
 public class MyPanel extends JPanel implements KeyListener{//我的画板
 	private int DEFAULT_X = 200;//坦克坐标
 	private int DEFAULT_Y = 200;
-	public static int TANK_SPEED = 3;//坦克移速
 
 	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//本画板上坦克的接收器
 
@@ -111,16 +110,16 @@ public class MyPanel extends JPanel implements KeyListener{//我的画板
 		int tankX = tank.getX();
 		switch(receive){
 			case KeyEvent.VK_DOWN:
-				tank.moveDown(TANK_SPEED);
+				tank.moveDown();
 				break;
 			case KeyEvent.VK_UP:
-				tank.moveUp(TANK_SPEED);
+				tank.moveUp();
 				break;
 			case KeyEvent.VK_RIGHT:
-				tank.moveRight(TANK_SPEED);
+				tank.moveRight();
 				break;
 			case KeyEvent.VK_LEFT:
-				tank.moveLeft(TANK_SPEED);
+				tank.moveLeft();
 				break;
 		}
 		this.repaint();

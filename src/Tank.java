@@ -19,6 +19,7 @@ public class Tank{
 	private int y;//坦克的纵坐标
 	private int direction;//坦克炮口指向的方向（上下左右）
 	private int type;//坦克的种类（我方、敌方、boss）
+	public static int speed = 3;
 
 	public Tank(int x, int y, int direction){
 		this.x = x;
@@ -27,7 +28,7 @@ public class Tank{
 	}
 
 	//向上移动，参数是速度
-	public void moveUp(int speed){
+	public void moveUp(){
 		setDirection(Tank.UP);
 		if(y- speed <= 0){
 			y = 0;
@@ -38,7 +39,7 @@ public class Tank{
 	}
 
 	//向下移动
-	public void moveDown(int speed){
+	public void moveDown(){
 		setDirection(Tank.DOWN);
 		if(x + 60 + speed >= 600){
 			y = 600 - 60;
@@ -49,7 +50,7 @@ public class Tank{
 	}
 	
 	//向右移动
-	public void moveRight(int speed){
+	public void moveRight(){
 		setDirection(Tank.RIGHT);
 		if(x + 50 + speed >= 600){
 			x = 600 - 50;
@@ -59,7 +60,7 @@ public class Tank{
 		setX(x);
 	}
 	
-	public void moveLeft(int speed){
+	public void moveLeft(){
 		setDirection(Tank.LEFT);
 		if(x - 10 - speed <= 0){
 			x = 0;
