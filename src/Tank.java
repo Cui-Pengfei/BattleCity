@@ -23,6 +23,7 @@ public class Tank{
 	public Tank(int x, int y, int direction){
 		this.x = x;
 		this.y = y;
+		this.direction = direction;
 	}
 
 	public int getX(){

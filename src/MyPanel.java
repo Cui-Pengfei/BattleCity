@@ -7,15 +7,12 @@ import java.awt.event.KeyListener;
  * @author CPF 创建于： 2021/7/1 10:34
  * @version 1.0
  */
-@SuppressWarnings({"all"})
 public class MyPanel extends JPanel implements KeyListener{//我的画板
-	private Tank tank = null;
-	private int tankX = 200;//坦克坐标
-	private int tankY = 200;
-	private int tankType = Tank.HERO;//坦克类型 默认值HERO
-	private int tankDirect = Tank.UP;//坦克方向 ，默认值UP
+	private int DEFAULT_X = 200;//坦克坐标
+	private int DEFAULT_Y = 200;
+	public static int TANK_SPEED = 3;//坦克移速
 
-	public static int TANK_SPEED = 3;
+	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//本画板上坦克的接收器
 
 
 
@@ -26,8 +23,8 @@ public class MyPanel extends JPanel implements KeyListener{//我的画板
 		g.setColor(Color.DARK_GRAY);//设置画板的背景颜色
 		g.fillRect(0, 0, 800, 800);
 
-		drawTank(g, tankX, tankY, tankDirect, tankType);
-		
+		drawTank(g, tank.getX(), tank.getY(), tank.getDirection(), tank.getType());
+
 	}
 
 	public void drawTank(Graphics g, int x, int y, int direction, int type){
@@ -110,38 +107,44 @@ public class MyPanel extends JPanel implements KeyListener{//我的画板
 	@Override
 	public void keyPressed(KeyEvent e){
 		int receive = e.getKeyCode();
+		int tankY = tank.getY();
+		int tankX = tank.getX();
 		switch(receive){
 			case KeyEvent.VK_DOWN:
-				tankDirect = Tank.DOWN;
+				tank.setDirection(Tank.DOWN);
 				if(tankY + 60 + TANK_SPEED >= 600){
 					tankY = 600 - 60;
 				}else{
 					tankY += TANK_SPEED;
 				}
+				tank.setY(tankY);
 				break;
 			case KeyEvent.VK_UP:
-				tankDirect = Tank.UP;
+				tank.setDirection(Tank.UP);
 				if(tankY - TANK_SPEED <= 0){
 					tankY = 0;
 				}else{
 					tankY -= TANK_SPEED;
 				}
+				tank.setY(tankY);
 				break;
 			case KeyEvent.VK_RIGHT:
-				tankDirect = Tank.RIGHT;
+				tank.setDirection(Tank.RIGHT);
 				if(tankX + 50 + TANK_SPEED >= 600){
 					tankX = 600 - 50;
 				}else{
 					tankX += TANK_SPEED;
 				}
+				tank.setX(tankX);
 				break;
 			case KeyEvent.VK_LEFT:
-				tankDirect = Tank.LEFT;
+				tank.setDirection(Tank.LEFT);
 				if(tankX - 10 - TANK_SPEED <= 0){
 					tankX = 0;
 				}else{
 					tankX -= TANK_SPEED;
 				}
+				tank.setX(tankX);
 				break;
 		}
 		this.repaint();
