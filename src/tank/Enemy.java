@@ -1,3 +1,6 @@
+package tank;
+
+import java.util.Vector;
 import java.util.Vector;
 
 /**
@@ -6,6 +9,10 @@ import java.util.Vector;
  */
 public class Enemy extends Tank{
 	Vector<Enemy> enemies = new Vector<>();
+
+	{
+		setSpeed(1);//速度搞慢点
+	}
 
 	public Enemy(){
 	}
@@ -21,4 +28,5 @@ public class Enemy extends Tank{
 		}
 		return enemies;
 	}
+
 }

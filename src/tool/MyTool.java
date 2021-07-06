@@ -1,43 +1,21 @@
-import javax.swing.*;
+package tool;
+
+import tank.FireBall;
+import tank.Tank;
+
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.util.Vector;
 
 /**
- * @author CPF 创建于： 2021/7/1 10:34
+ * @author CPF 创建于： 2021/7/5 11:45
  * @version 1.0
  */
-public class MyPanel extends JPanel implements KeyListener{//我的画板
-	private final int DEFAULT_X = 200;//坦克坐标
-	private final int DEFAULT_Y = 200;
+public class MyTool{
 
-	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//本画板上可操控的坦克
-
-
-	@Override
-	public void paint(Graphics g){
-		super.paint(g);
-		g.setColor(Color.DARK_GRAY);//设置画板的背景颜色
-		g.fillRect(0, 0, 800, 800);
-
-		//三辆敌方向下坦克
-		Enemy enemy = new Enemy();
-		Vector<Enemy> army = enemy.army(10);
-		for(Enemy enemy1 : army){
-			drawTank(g, enemy1);
-		}
-
-		//一辆我方坦克向上 可移动
+	public static void drawTank(Graphics g, Tank tank){//接收坦克直接绘制坦克
 		drawTank(g, tank.getX(), tank.getY(), tank.getDirection(), tank.getType());
-
 	}
 
-	public void drawTank(Graphics g, Tank tank){//接收坦克直接绘制坦克
-		drawTank(g, tank.getX(),tank.getY(),tank.getDirection(),tank.getType());
-	}
-
-	public void drawTank(Graphics g, int x, int y, int direction, int type){//坐标绘制
+	public static void drawTank(Graphics g, int x, int y, int direction, int type){//坐标绘制
 		switch(type){
 			case Tank.HERO://我方坦克
 				g.setColor(Color.cyan);
@@ -105,38 +83,30 @@ public class MyPanel extends JPanel implements KeyListener{//我的画板
 			default:
 				System.out.println("其他方向暂时没有绘制...");
 
-
 		}
 	}//end drawTank
 
-	@Override
-	public void keyPressed(KeyEvent e){
-		int receive = e.getKeyCode();
-		switch(receive){
-			case KeyEvent.VK_DOWN:
-				tank.moveDown();
-				break;
-			case KeyEvent.VK_UP:
-				tank.moveUp();
-				break;
-			case KeyEvent.VK_RIGHT:
-				tank.moveRight();
-				break;
-			case KeyEvent.VK_LEFT:
-				tank.moveLeft();
-				break;
+	public static void drawFire(Graphics g, FireBall ball){
+		int x = ball.getX();
+		int y = ball.getY();
+		Color color = ball.getColor();
+		int size = ball.getSize();
+		drawFire(g, x, y, size, color);
+	}
+
+	public static void drawFire(Graphics g, int x, int y, int size, Color color){
+		g.setColor(color);
+		g.fillOval(x, y, size, size);
+	}
+
+	//判断一个炮弹是否命中了坦克
+	public static boolean isSuccessHit(FireBall ball, Tank tank){
+		if(Math.pow(ball.centerX() - tank.centerX(), 2)
+				+ Math.pow(ball.centerY() - tank.centerY(), 2)
+				< Math.pow(30 + (ball.getSize() / 2.0), 2)){
+			return true;
 		}
-		this.repaint();
-
+		return false;
 	}
 
-	@Override
-	public void keyTyped(KeyEvent e){
-
-	}
-
-	@Override
-	public void keyReleased(KeyEvent e){
-
-	}
 }
