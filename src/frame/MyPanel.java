@@ -17,8 +17,10 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	private final int DEFAULT_X = 250;//我方坦克坐标
 	private final int DEFAULT_Y = 400;
 
+
+	private int enemyNum = 10; //enemy数量
 	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//我方坦克
-	private Vector<Enemy> army = enemyArmy(20);//敌人坦克军团
+	private Vector<Enemy> army = enemyArmy(enemyNum);//敌人坦克军团
 	private Boss boss = new Boss(200, 200, Tank.UP);//敌方Boss
 
 	{//敌人坦克 要么在这里开启，要么在army函数内开启，都一样
@@ -43,33 +45,31 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 
 			//这里一定要判断是否在存活，不然这些坦克就是死亡幽灵....
 			if(boss.isLive() && MyTool.isSuccessHit(ball, boss)){//命中
-				ball.setLive(false);
-				boss.setLive(false);
+				ball.setLive(false);//立刻使炮弹死亡，不能让它和小球血量一起掉
+				int blood = boss.getBlood() - 1;
+				boss.setBlood(blood);
+				if(blood == 0){
+					boss.setLive(false);
+				}
 				//break;//如果此子弹已经死掉，就不去下面比较了  重大低级失误，此处应该是continue,退出一颗炮弹的追踪！！！！！！
 				continue;
 			}
 
 			for(Enemy enemy : army){
-				if(enemy.isLive() && MyTool.isSuccessHit(ball, enemy)){//命中
+				//首先要有敌方(因为会清理集合) 其次敌方要或者 再者要命中 才算打倒了！
+				if(enemy != null && enemy.isLive() && MyTool.isSuccessHit(ball, enemy)){//命中
 					ball.setLive(false);
 					enemy.setLive(false);
-					//break;//如果此子弹已经死掉，就不去下面比较了  重大低级失误，此处应该是continue,退出一颗炮弹的追踪！！！！！！
-					continue;
+					army.remove(enemy);//把被摧毁的坦克从集合中清理出去
+					break;//一发炮弹只能毁掉一辆坦克。因此退出其他坦克检查，
+					// 但是没有退出我方这发炮弹的检查，好在此处位于检查的地步，也就要退出了
 				}
 			}
 		}//检查命中 结束
 
 
 		//绘制敌方坦克,并尽量避免相撞
-		int bump = 0;
 		for(Enemy enemy : army){
-			/*for(Enemy enemy1 : army){
-				if(enemy != enemy1){//自身不能相比
-					if(enemy.isTouch(enemy1)){
-						enemy.reverseDirect();
-					}
-				}//碰撞检测次数完毕
-			}*/
 			if(enemy.isLive())//存活的坦克才能绘制出来
 				MyTool.drawTank(g, enemy);
 			//绘制敌方炮弹
@@ -85,7 +85,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 
 		//绘制Boss 及炮弹
 		if(boss.isLive())
-			MyTool.drawTank(g, boss);
+			MyTool.drawBoss(g, boss);
 		Vector<FireBall> bossBalls = boss.getBalls();
 		for(FireBall bossBall : bossBalls){
 			if(bossBall.isLive())//只有存活的炮弹才能被刷新
@@ -152,17 +152,13 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	@Override
 	public void run(){
 		while(true){
-			boolean restart = true;
-			for(Enemy enemy : army){
-				if(enemy.isLive()){
-					restart = false;//只要有一个活着的坦克就不能重新开始
-				}
-			}
-			if(restart){
-				army = enemyArmy(20);
-				for(Enemy enemy : army){
-					enemy.start();
-				}
+			if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
+				int x = (int) (Math.random() * GameFrame.width);
+				int y = (int) (Math.random() * GameFrame.height);
+				int direction = (int)(Math.random() * 4);
+				Enemy enemy = new Enemy(x, y, direction);
+				enemy.start();
+				army.add(enemy);
 			}
 
 			this.repaint();//时刻重绘

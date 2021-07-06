@@ -1,5 +1,7 @@
 package tool;
 
+import com.sun.org.apache.bcel.internal.generic.BREAKPOINT;
+import tank.Boss;
 import tank.FireBall;
 import tank.Tank;
 
@@ -11,8 +13,44 @@ import java.awt.*;
  */
 public class MyTool{
 
-	public static void drawTank(Graphics g, Tank tank){//接收坦克直接绘制坦克
-		drawTank(g, tank.getX(), tank.getY(), tank.getDirection(), tank.getType());
+	//绘制Boss坦克
+	public static void drawBoss(Graphics g, Boss boss){
+		int x = boss.getX();
+		int y = boss.getY();
+		int direction = boss.getDirection();
+		int type = boss.getType();
+		int blood = boss.getBlood();
+		switch(blood){
+			case 5:
+				g.setColor(Color.RED);
+				break;
+			case 4:
+				g.setColor(Color.magenta);
+				break;
+			case 3:
+				g.setColor(Color.PINK);
+				break;
+			case 2:
+				g.setColor(Color.blue);
+				break;
+			case 1:
+				g.setColor(Color.GREEN);
+				break;
+			default:
+				g.setColor(Color.DARK_GRAY);
+				break;
+		}
+		drawDirection(g, x, y, direction);
+	}
+
+
+	//绘制普通坦克
+	public static void drawTank(Graphics g, Tank tank){//接收坦克直接绘制坦克 最常用！
+		int x = tank.getX();
+		int y = tank.getY();
+		int direction = tank.getDirection();
+		int type = tank.getType();
+		drawTank(g, x, y, direction, type);
 	}
 
 	public static void drawTank(Graphics g, int x, int y, int direction, int type){//坐标绘制
@@ -29,7 +67,10 @@ public class MyTool{
 			default:
 				System.out.println("其他的尚未绘制...");
 		}
+		drawDirection(g, x, y, direction);
+	}//end drawTank
 
+	private static void drawDirection(Graphics g, int x, int y, int direction){
 		switch(direction){
 			case Tank.UP://炮口朝上的坦克
 				g.fill3DRect(x, y, 10, 60, false);//轮子
@@ -84,7 +125,7 @@ public class MyTool{
 				System.out.println("其他方向暂时没有绘制...");
 
 		}
-	}//end drawTank
+	}
 
 	public static void drawFire(Graphics g, FireBall ball){
 		int x = ball.getX();

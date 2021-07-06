@@ -28,6 +28,7 @@ public class Tank extends Thread{
 	private int type;//坦克的种类（我方、敌方、boss）
 	private int speed = 5;//坦克的速度
 	private boolean live = true;//是否存活
+	private FireBall ball = new FireBall(10,Color.RED);//每个坦克都有自己的炮弹
 
 	//炮弹本身自己就是一个线程，要自我操作自己的数据，MyPanel也是一个线程，绘制炮弹时，也要操作炮弹数据，balls所属类Tank也是一个线程
 	//因此必须使用Vector,才能避免出现异常
@@ -77,7 +78,7 @@ public class Tank extends Thread{
 				fire();
 			}
 
-			//每10秒清理一下弹夹    坦克仓库
+			//每10秒清理一下弹夹，频繁清理不利于性能
 			if(nowClear - startClear > clearTime){
 				startClear = nowClear;
 				balls.removeIf(ball -> ball != null && !ball.isLive());//清理弹夹
@@ -220,10 +221,9 @@ public class Tank extends Thread{
 
 	//开火函数
 	public void fire(){
-		FireBall ball = new FireBall(x, y, direction);//临时量，为了配合得到炮弹大小，有待优化
 		int ballX = x;
 		int ballY = y;
-		switch(direction){
+		switch(direction){//不同方向要不同地调整像素，保证炮弹从炮口射出
 			case Tank.UP:
 				ballX = x + 20 - ball.getSize() / 2;
 				break;
@@ -240,24 +240,8 @@ public class Tank extends Thread{
 				ballY = y + 30 - ball.getSize() / 2;
 				break;
 		}
-		switch(type){
-			case HERO:
-				ball.setColor(Color.CYAN);
-				//英雄使用默认炮弹大小10
-				break;
-			case ENEMY:
-				ball.setColor(Color.ORANGE);
-				ball.setSize(5);
-				break;
-			case BOSS:
-				ball.setColor(Color.RED);
-				ball.setSize(15);
-				break;
-			default:
-				System.out.println("不会有这一种坦克...发射炮弹");
 
-		}
-		ball = new FireBall(ballX, ballY, direction, ball.getSize(), ball.getColor());
+		FireBall ball = new FireBall(ballX, ballY, direction, this.ball.getSize(), this.ball.getColor());
 		balls.add(ball);
 		ball.start();
 	}
@@ -310,5 +294,13 @@ public class Tank extends Thread{
 
 	public void setLive(boolean live){
 		this.live = live;
+	}
+
+	public FireBall getBall(){
+		return ball;
+	}
+
+	public void setBall(FireBall ball){
+		this.ball = ball;
 	}
 }

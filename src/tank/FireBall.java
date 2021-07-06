@@ -10,11 +10,11 @@ import java.awt.*;
  * 这是坦克发射的炮弹,是独立的线程
  */
 public class FireBall extends Thread{
-	private Color color = Color.RED;//默认炮弹颜色是红色
 	private int x;
 	private int y;//坐标
 	private int direction;//炮弹打向的方向 上下左右，与坦克炮管方向一致
 	private int size = 10;//直径
+	private Color color = Color.RED;//默认炮弹颜色是红色
 	private boolean live = true;//炮弹是否存活
 	private int speed = 6;//越大速度越快
 
@@ -31,6 +31,11 @@ public class FireBall extends Thread{
 		this.x = x;
 		this.y = y;
 		this.direction = direction;
+	}
+
+	public FireBall(int size, Color color){
+		this.size = size;
+		this.color = color;
 	}
 
 	//炮弹的圆心横坐标
