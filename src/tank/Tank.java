@@ -29,10 +29,9 @@ public class Tank extends Thread{
 	private int speed = 5;//坦克的速度
 	private boolean live = true;//是否存活
 
-	//集合每个元素都是线程，但是只有一个MyPanel线程来操作集合，所以不存在多线程操作集合的问题
+	//炮弹本身自己就是一个线程，要自我操作自己的数据，MyPanel也是一个线程，绘制炮弹时，也要操作炮弹数据，balls所属类Tank也是一个线程
+	//因此必须使用Vector,才能避免出现异常
 	private Vector<FireBall> balls = new Vector<>();
-
-
 	public Vector<FireBall> getBalls(){
 		return balls;
 	}

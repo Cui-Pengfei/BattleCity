@@ -17,20 +17,16 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	private final int DEFAULT_X = 250;//我方坦克坐标
 	private final int DEFAULT_Y = 400;
 
-	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//本画板上可操控的坦克
-
-	{
-		tank.start();//我方坦克也运行
-	}
-
-	private Vector<Enemy> army = new Enemy().army(10);//此处其实Vector更好
-	private Boss boss = new Boss(200, 200, Tank.UP);
+	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//我方坦克
+	private Vector<Enemy> army = enemyArmy(20);//敌人坦克军团
+	private Boss boss = new Boss(200, 200, Tank.UP);//敌方Boss
 
 	{//敌人坦克 要么在这里开启，要么在army函数内开启，都一样
 		for(Enemy enemy : army){
 			enemy.start();
 		}
 		boss.start();
+		tank.start();//我方坦克也运行
 	}
 
 	@Override
@@ -110,6 +106,15 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 		}
 
 
+	}//end paint()
+
+	//各品种大军
+	public Vector<Enemy> enemyArmy(int number){
+		Vector<Enemy> army = new Vector<>(number);
+		for(int i = 0; i < number; i++){
+			army.add(new Enemy((i % 5 + 1) * 100, ((i / 5) + 1) * 100, Tank.DOWN));
+		}
+		return army;
 	}
 
 	@Override
@@ -147,7 +152,18 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	@Override
 	public void run(){
 		while(true){
-
+			boolean restart = true;
+			for(Enemy enemy : army){
+				if(enemy.isLive()){
+					restart = false;//只要有一个活着的坦克就不能重新开始
+				}
+			}
+			if(restart){
+				army = enemyArmy(20);
+				for(Enemy enemy : army){
+					enemy.start();
+				}
+			}
 
 			this.repaint();//时刻重绘
 			try{
