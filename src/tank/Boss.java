@@ -12,7 +12,7 @@ public class Boss extends Tank{
 	public Boss(int x, int y, int direction){
 		super(x, y, direction);
 		setType(Tank.BOSS);
-		setSpeed(1);
+		setSpeed(2);
 		setBall(new FireBall(15, Color.RED));
 	}
 

@@ -29,6 +29,8 @@ public class Tank extends Thread{
 	private int speed = 5;//坦克的速度
 	private boolean live = true;//是否存活
 	private FireBall ball = new FireBall(10,Color.RED);//每个坦克都有自己的炮弹
+	private boolean runnable = true;
+	private boolean stop = false;
 
 	//炮弹本身自己就是一个线程，要自我操作自己的数据，MyPanel也是一个线程，绘制炮弹时，也要操作炮弹数据，balls所属类Tank也是一个线程
 	//因此必须使用Vector,才能避免出现异常
@@ -58,7 +60,7 @@ public class Tank extends Thread{
 
 		long nowDirect, nowFire,nowClear;
 		int fireTime = 1000;
-		int oneDirectionTime = 3 * 1000;//5秒改变一个方向
+		int oneDirectionTime = 5 * 1000;//5秒改变一个方向
 		int clearTime = 10 * 1000;//10秒清理一次弹夹
 		int randomDirect;
 		while(live){//存活的坦克才有线程
@@ -66,16 +68,17 @@ public class Tank extends Thread{
 			nowFire = System.currentTimeMillis();
 			nowClear = System.currentTimeMillis();
 			//我方坦克不自动改变方向
-			if(type != Tank.HERO && (nowDirect - startDirect > oneDirectionTime)){
+			if(!stop && type != Tank.HERO && (nowDirect - startDirect > oneDirectionTime)){
 				startDirect = nowDirect;//进来后，起始时间就改变了，不然控制条件控制不住
 				randomDirect = (int) (Math.random() * 4);//[0,1,2,3]
 				direction = randomDirect;
 			}//得到一个随机方向
 
 			//每隔一秒发射一个炮弹
-			if(type != Tank.HERO && (nowFire - startFire > fireTime)){
+			if(!stop && type != Tank.HERO && (nowFire - startFire > fireTime)){
 				startFire = nowFire;
 				fire();
+				runnable = true;
 			}
 
 			//每10秒清理一下弹夹，频繁清理不利于性能
@@ -84,7 +87,9 @@ public class Tank extends Thread{
 				balls.removeIf(ball -> ball != null && !ball.isLive());//清理弹夹
 			}
 
-			move(direction);//敌人坦克也要动来动去
+			if(!stop && runnable){
+				move(direction);//敌人坦克也要动来动去
+			}
 
 			try{
 				Thread.sleep(10);//线程不能一直循环着
@@ -174,26 +179,91 @@ public class Tank extends Thread{
 	public int centerY(){
 		return y + 30;
 	}
+	
+	public void touchReact(Tank tank){
+		//如果相向运动，建议其中一个往相反方向走 如果碰到的那个坦克撞墙了
+		if(this.direction == UP && tank.direction == DOWN ||
+		   this.direction == DOWN && tank.direction == UP ||
+	       this.direction == LEFT && tank.direction == RIGHT ||
+		   this.direction == RIGHT && tank.direction == LEFT){
+			this.reverseDirect();
+		}else if(tank.isTouch(this)){//双方互相进入，是最麻烦的，只能让双反都向相反方向才好
+			this.reverseDirect();
+			tank.reverseDirect();
+		}else{
+			this.runnable = false;//其他情况均建议前者等待
+		}
+	}
+
+	public boolean isTouchBlock(){
+		int 临界值
+		switch(direction){
+			case UP:
+				if(y < 5)
+					return true;
+		}
+	}
 
 	/**
 	 * 判断此坦克是否与另一辆坦克即将相撞.
-	 * 在绘制坦克的时候，虽然坦克方向会改变，但是坦克的核心点不会随着方向改变，
-	 * 计算出核心点是 (x+20,y+30).
+	 * 种类非常多，而且需要不同的应变方式：
+	 * 一.此坦克向上运动
+	 *      1.遇到向上/向下的坦克 判断条件是一样的
 	 *
 	 * @param tank 另一辆坦克
 	 * @return 返回true为即将撞上
 	 */
 	public boolean isTouch(Tank tank){
-		int thisCenterX = x + 20;
-		int thisCenterY = y + 30;
-		int tankCenterX = tank.x + 20;
-		int tankCenterY = tank.y + 30;
-		if(direction != tank.direction){//方向不相同才会有可能相撞
-			//仔细的情况有很多，此处只模糊一下
-			if(Math.abs(thisCenterX - tankCenterX) < 50 &&
-					Math.abs(thisCenterY - tankCenterY) < 50){
-				return true;
+		class Point{
+			int x;
+			int y;
+			public Point(){}
+			public Point(int x, int y){
+				this.x = x;
+				this.y = y;
 			}
+		}
+		Point left = new Point(),right = new Point();
+
+		switch(direction){
+			case Tank.UP://此坦克 向上
+				left = new Point(x,y);
+				right = new Point(x + 40, y);
+				break;
+				//由于上面是return 此处不用break了
+			case Tank.DOWN:
+				left = new Point(x,y + 60);
+				right = new Point(x + 40, y + 60);
+				break;
+			case Tank.LEFT:
+				left = new Point(x - 10,y + 10);
+				right = new Point(x - 10, y + 50);
+				break;
+			case Tank.RIGHT:
+				left = new Point(x + 50,y + 10);
+				right = new Point(x + 50, y + 50);
+				break;
+			default:
+				System.out.println("坦克不可能有第四个方向！");
+				break;
+		}
+
+		if(isPointInTank(left.x,left.y,tank) || isPointInTank(right.x, right.y, tank)){
+			return true;//只要这两个点在另一坦克范围内，就算碰撞
+		}
+		return false;
+	}
+
+	public boolean isPointInTank(int x, int y, Tank tank){
+		switch(tank.direction){
+			case Tank.UP:
+			case Tank.DOWN:
+				if(x > tank.x && x < tank.x + 40 && y > tank.y && y < tank.y + 60)
+					return true;
+			case LEFT:
+			case RIGHT:
+				if(x > tank.x - 10 && x < tank.x + 50 && y > tank.y + 10 && y < tank.y + 50)
+					return true;
 		}
 		return false;
 	}
@@ -302,5 +372,21 @@ public class Tank extends Thread{
 
 	public void setBall(FireBall ball){
 		this.ball = ball;
+	}
+
+	public boolean isRunnable(){
+		return runnable;
+	}
+
+	public void setRunnable(boolean runnable){
+		this.runnable = runnable;
+	}
+
+	public boolean isStop(){
+		return stop;
+	}
+
+	public void setStop(boolean stop){
+		this.stop = stop;
 	}
 }

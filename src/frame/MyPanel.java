@@ -18,7 +18,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	private final int DEFAULT_Y = 400;
 
 
-	private int enemyNum = 10; //enemy数量
+	private int enemyNum = 20; //enemy数量
 	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//我方坦克
 	private Vector<Enemy> army = enemyArmy(enemyNum);//敌人坦克军团
 	private Boss boss = new Boss(200, 200, Tank.UP);//敌方Boss
@@ -67,15 +67,34 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 			}
 		}//检查命中 结束
 
+		//此处防止碰撞
+		for(Enemy enemy : army){
+			if(!enemy.isLive()){
+				continue;//死掉的坦克不判断
+			}
+			for(Enemy enemy1 : army){
+				if(enemy == enemy1)//自己不与自己比较
+					//break;//又犯了致命错误;此处应该是结束本轮循环，不是全部结束
+					continue;
+				if(enemy.isTouch(enemy1)){
+					enemy.touchReact(enemy1);//碰撞反应
+					break;//与一辆碰撞就不要检测其他的了
+				}else{//因为有可能之前置为false
+					enemy.setRunnable(true);//畅通行
+				}
 
-		//绘制敌方坦克,并尽量避免相撞
+			}
+		}
+
+
+		//绘制敌方坦克
 		for(Enemy enemy : army){
 			if(enemy.isLive())//存活的坦克才能绘制出来
 				MyTool.drawTank(g, enemy);
 			//绘制敌方炮弹
 			Vector<FireBall> balls = enemy.getBalls();
 			if(balls.size() != 0){
-				for(FireBall ball : balls){
+					for(FireBall ball : balls){
 					if(ball.isLive())//只有存活的炮弹才能被刷新
 						MyTool.drawFire(g, ball);//把每个炮弹都画出来
 				}
@@ -136,6 +155,17 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 			case KeyEvent.VK_SPACE://空格发射子弹
 				tank.fire();
 				break;
+			case KeyEvent.VK_S://停止画面
+				boss.setStop(true);
+				for(Enemy enemy : army){
+					enemy.setStop(true);
+				}
+				break;
+			case KeyEvent.VK_B://启动画面
+				for(Enemy enemy : army){
+					enemy.setStop(false);
+				}
+				break;
 		}
 		this.repaint();
 
@@ -163,7 +193,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 
 			this.repaint();//时刻重绘
 			try{
-				Thread.sleep(2);//其他进程都是10毫秒刷新一次，那面板要小于10秒刷新
+				Thread.sleep(1);//其他进程都是10毫秒刷新一次，那面板要小于10秒刷新
 			}catch(InterruptedException e){
 				e.printStackTrace();
 			}
