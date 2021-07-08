@@ -15,6 +15,7 @@ public class FireBall extends Thread{
 	private int direction;//炮弹打向的方向 上下左右，与坦克炮管方向一致
 	private int size = 10;//直径
 	private Color color = Color.RED;//默认炮弹颜色是红色
+	private int type = Tank.BOSS;//哪种坦克的炮弹
 	private boolean live = true;//炮弹是否存活
 	private int speed = 6;//越大速度越快
 
@@ -127,5 +128,12 @@ public class FireBall extends Thread{
 
 	public void setSize(int size){
 		this.size = size;
+	}
+
+	public int getType(){
+		return type;
+	}
+	public void setType(int type){
+		this.type = type;
 	}
 }

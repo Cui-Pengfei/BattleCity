@@ -59,9 +59,9 @@ public class Tank extends Thread{
 		long startClear = System.currentTimeMillis();//清空弹夹时间控制
 
 		long nowDirect, nowFire,nowClear;
-		int fireTime = 1000;
+		int fireTime = 3000;
 		int oneDirectionTime = 5 * 1000;//5秒改变一个方向
-		int clearTime = 10 * 1000;//10秒清理一次弹夹
+		int clearTime = 5 * 1000;//5秒清理一次弹夹
 		int randomDirect;
 		while(live){//存活的坦克才有线程
 			nowDirect = System.currentTimeMillis();
@@ -74,7 +74,7 @@ public class Tank extends Thread{
 				direction = randomDirect;
 			}//得到一个随机方向
 
-			//每隔一秒发射一个炮弹
+			//每隔3秒发射一个炮弹
 			if(!stop && type != Tank.HERO && (nowFire - startFire > fireTime)){
 				startFire = nowFire;
 				fire();
@@ -87,8 +87,8 @@ public class Tank extends Thread{
 				balls.removeIf(ball -> ball != null && !ball.isLive());//清理弹夹
 			}
 
-			if(!stop && runnable){
-				move(direction);//敌人坦克也要动来动去
+			if(!stop && runnable){//敌人坦克也要动来动去
+				move(direction);
 			}
 
 			try{
@@ -181,13 +181,16 @@ public class Tank extends Thread{
 	}
 	
 	public void touchReact(Tank tank){
-		//如果相向运动，建议其中一个往相反方向走 如果碰到的那个坦克撞墙了
+		//如果相向运动，建议其中一个往相反方向走，本坦克也转向
 		if(this.direction == UP && tank.direction == DOWN ||
-		   this.direction == DOWN && tank.direction == UP ||
-	       this.direction == LEFT && tank.direction == RIGHT ||
-		   this.direction == RIGHT && tank.direction == LEFT){
+		    this.direction == DOWN && tank.direction == UP ||
+	             this.direction == LEFT && tank.direction == RIGHT ||
+		             this.direction == RIGHT && tank.direction == LEFT){
 			this.reverseDirect();
-		}else if(tank.isTouch(this)){//双方互相进入，是最麻烦的，只能让双反都向相反方向才好
+		}/*else if(){//如果同向的话，也是要等待的，毕竟有一方
+
+		}*/
+		else if(tank.isTouch(this)){//双方头部互相进入，是最麻烦的，只能让双反都向相反方向才好
 			this.reverseDirect();
 			tank.reverseDirect();
 		}else{
@@ -196,12 +199,22 @@ public class Tank extends Thread{
 	}
 
 	public boolean isTouchBlock(){
-		int 临界值
+		int threshold = 5;
 		switch(direction){
 			case UP:
-				if(y < 5)
+				if(y < threshold)
+					return true;
+			case DOWN:
+				if(y > GameFrame.height - threshold)
+					return true;
+			case LEFT:
+				if(y < threshold)
+					return true;
+			case RIGHT:
+				if(y > GameFrame.width - threshold)
 					return true;
 		}
+		return false;
 	}
 
 	/**
@@ -214,7 +227,7 @@ public class Tank extends Thread{
 	 * @return 返回true为即将撞上
 	 */
 	public boolean isTouch(Tank tank){
-		class Point{
+		class Point{//内部点类
 			int x;
 			int y;
 			public Point(){}

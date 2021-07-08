@@ -13,5 +13,14 @@ public class Hero extends Tank{
 		setType(Tank.HERO);
 		setSpeed(2);//我方坦克快些
 		setBall(new FireBall(10, Color.CYAN));
+		setName("Hero");
+		getBall().setType(Tank.HERO);
+	}
+
+	public void ballGrow(){
+		int ballSize = getBall().getSize();
+		if(ballSize <= 20){
+			getBall().setSize(ballSize + 1);
+		}
 	}
 }

@@ -14,6 +14,18 @@ public class Boss extends Tank{
 		setType(Tank.BOSS);
 		setSpeed(2);
 		setBall(new FireBall(15, Color.RED));
+		setName("boss");
+		getBall().setType(Tank.BOSS);
+	}
+
+	public void returnBlood(){
+		if(blood < 5)
+			blood++;
+	}
+	public void lessBlood(){
+		if(blood != 0){
+			blood--;
+		}
 	}
 
 	public int getBlood(){

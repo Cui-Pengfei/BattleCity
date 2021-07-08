@@ -18,17 +18,21 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	private final int DEFAULT_Y = 400;
 
 
-	private int enemyNum = 20; //enemy数量
-	private Tank tank = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//我方坦克
+	private int enemyNum = 1; //enemy数量
+	private Hero hero = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//我方坦克
 	private Vector<Enemy> army = enemyArmy(enemyNum);//敌人坦克军团
 	private Boss boss = new Boss(200, 200, Tank.UP);//敌方Boss
+	private Vector<Boss> bosses = new Vector<>();//boss军团
 
-	{//敌人坦克 要么在这里开启，要么在army函数内开启，都一样
+	{//敌人坦克 要么在这里开启，要么在army函数内开启，都一样,将来可以设置按钮
+		///////////////////////
+
+		bosses.add(boss);
 		for(Enemy enemy : army){
 			enemy.start();
 		}
 		boss.start();
-		tank.start();//我方坦克也运行
+		hero.start();//我方坦克也运行
 	}
 
 	@Override
@@ -37,54 +41,48 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 		g.setColor(Color.DARK_GRAY);//设置画板的背景颜色
 		g.fillRect(0, 0, GameFrame.width, GameFrame.height);
 
-		//在所有绘制前，先检测是否有坦克被我打死
-		for(FireBall ball : tank.getBalls()){//检测我的每一发炮弹
-			if(!ball.isLive())
-				//break;//如果此子弹已经死掉，就不去下面比较了  重大低级失误，此处应该是continue,退出一颗炮弹的追踪！！！！！！
-				continue;
-
-			//这里一定要判断是否在存活，不然这些坦克就是死亡幽灵....
-			if(boss.isLive() && MyTool.isSuccessHit(ball, boss)){//命中
-				ball.setLive(false);//立刻使炮弹死亡，不能让它和小球血量一起掉
-				int blood = boss.getBlood() - 1;
-				boss.setBlood(blood);
-				if(blood == 0){
-					boss.setLive(false);
-				}
-				//break;//如果此子弹已经死掉，就不去下面比较了  重大低级失误，此处应该是continue,退出一颗炮弹的追踪！！！！！！
-				continue;
-			}
-
-			for(Enemy enemy : army){
-				//首先要有敌方(因为会清理集合) 其次敌方要或者 再者要命中 才算打倒了！
-				if(enemy != null && enemy.isLive() && MyTool.isSuccessHit(ball, enemy)){//命中
-					ball.setLive(false);
-					enemy.setLive(false);
-					army.remove(enemy);//把被摧毁的坦克从集合中清理出去
-					break;//一发炮弹只能毁掉一辆坦克。因此退出其他坦克检查，
-					// 但是没有退出我方这发炮弹的检查，好在此处位于检查的地步，也就要退出了
-				}
-			}
-		}//检查命中 结束
-
-		//此处防止碰撞
-		for(Enemy enemy : army){
-			if(!enemy.isLive()){
-				continue;//死掉的坦克不判断
-			}
-			for(Enemy enemy1 : army){
-				if(enemy == enemy1)//自己不与自己比较
-					//break;//又犯了致命错误;此处应该是结束本轮循环，不是全部结束
-					continue;
-				if(enemy.isTouch(enemy1)){
-					enemy.touchReact(enemy1);//碰撞反应
-					break;//与一辆碰撞就不要检测其他的了
-				}else{//因为有可能之前置为false
-					enemy.setRunnable(true);//畅通行
-				}
-
+		//检测是否有坦克被我打死
+		if(hero.getBalls().size() != 0)
+		for(FireBall ball : hero.getBalls()){//检测我的每一发炮弹
+			if(isHitTarget(ball)){
+				hero.ballGrow();//我方坦克击中目标增益
 			}
 		}
+
+		//检测是否有坦克被enemy炮弹击中
+		for(Enemy enemy : army){
+			for(FireBall ball : enemy.getBalls()){
+				if(ball.isLive() && isHitTarget(ball)){
+					//他立功了，也变成了Boss(偷梁换柱，boss没有进入army集合)
+					Boss thisBoss = new Boss(enemy.getX(),enemy.getY(),enemy.getDirection());
+					thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
+					bosses.add(thisBoss);
+					thisBoss.start();
+
+					enemy.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
+					army.remove(enemy);
+				}
+			}
+		}
+
+		//再检测是否有坦克被boss击中(击中enemy是没有反馈的)
+		for(Boss boss : bosses){
+			for(FireBall ball : boss.getBalls()){
+				if(ball.isLive() && isHitTarget(ball)){
+					boss.returnBlood();
+				}
+			}
+		}
+
+		for(Enemy enemy : army){//这是防止enemy碰撞其他坦克
+			insureNoOverlap(enemy);
+		}
+
+		for(Boss boss : bosses){//此处防止Boss重叠坦克
+			insureNoOverlap(boss);
+		}
+
+		insureNoOverlap(hero);//此处防止我方坦克重叠敌方坦克
 
 
 		//绘制敌方坦克
@@ -103,20 +101,23 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 
 
 		//绘制Boss 及炮弹
-		if(boss.isLive())
-			MyTool.drawBoss(g, boss);
-		Vector<FireBall> bossBalls = boss.getBalls();
-		for(FireBall bossBall : bossBalls){
-			if(bossBall.isLive())//只有存活的炮弹才能被刷新
-				MyTool.drawFire(g, bossBall);//把每个炮弹都画出来
+		for(Boss boss1 : bosses){
+			if(boss1.isLive())
+				MyTool.drawBoss(g, boss1);
+			Vector<FireBall> bossBalls = boss1.getBalls();
+			for(FireBall bossBall : bossBalls){
+				if(bossBall.isLive())//只有存活的炮弹才能被刷新
+					MyTool.drawFire(g, bossBall);//把每个炮弹都画出来
+			}
 		}
 
+
 		//一辆我方坦克向上 可移动
-		//暂时我无敌
-		MyTool.drawTank(g, tank.getX(), tank.getY(), tank.getDirection(), tank.getType());
+		if(hero.isLive())
+		MyTool.drawTank(g, hero.getX(), hero.getY(), hero.getDirection(), hero.getType());
 
 		//绘制我方炮弹
-		Vector<FireBall> balls = tank.getBalls();
+		Vector<FireBall> balls = hero.getBalls();
 		if(balls.size() != 0){
 			for(FireBall ball : balls){
 				if(ball.isLive())//只有存活的炮弹才能被刷新
@@ -127,8 +128,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 
 	}//end paint()
 
-	//各品种大军
-	public Vector<Enemy> enemyArmy(int number){
+	public Vector<Enemy> enemyArmy(int number){//敌方坦克大军
 		Vector<Enemy> army = new Vector<>(number);
 		for(int i = 0; i < number; i++){
 			army.add(new Enemy((i % 5 + 1) * 100, ((i / 5) + 1) * 100, Tank.DOWN));
@@ -136,25 +136,128 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 		return army;
 	}
 
+	/**
+	 * 此方法可以防着一辆坦克重叠画面中的其他坦克.
+	 * @param tank 此坦克不会重叠其他坦克
+	 */
+	public void insureNoOverlap(Tank tank){
+		///////////////////////////////////////////////////////////////need to optimize
+		if(!tank.isLive())
+			return;//如果这个坦克死掉，就不检测了(由于清除坦克的迟滞性，死亡坦克可能被检测到) 好像也检测不到，再看了
+		Vector<Tank> needDetectTanks = new Vector<>();
+		needDetectTanks.addAll(army);
+		needDetectTanks.addAll(bosses);
+		needDetectTanks.add(hero);
+
+		for(Tank needDetectTank : needDetectTanks){
+			if(needDetectTank == tank || !needDetectTank.isLive())
+				continue;//自身、死掉的坦克 不用比较
+			if(tank.isTouch(needDetectTank)){
+				tank.touchReact(needDetectTank);//即将重叠的坦克 一般会静止
+				break;//只检测一次事故
+			}else{
+				tank.setRunnable(true);//由于break的存在，没有任何坦克即将重叠，才会到这一步
+			}
+		}
+	}//end detect
+
+	/**
+	 * 监测一个小球是否击中目标.
+	 * 并完成击中目标所导致的目标的变化，此炮弹给发射者带来的反馈不在此处完成.
+	 * @param ball 被监测的小球.
+	 */
+	public boolean isHitTarget(FireBall ball){
+		if(!ball.isLive())
+			return false;//死掉的炮弹当然击不中
+
+		Vector<Tank> tanks = findTargetByBall(ball);//得到的都是此炮弹可攻击的坦克
+
+		if(ball.getType() == Tank.HERO){
+			for(Tank tank : tanks){
+				System.out.println(tank.getName());
+			}
+		}
+
+		for(Tank tank : tanks){
+			if(tank.isLive() && MyTool.isSuccessHit(ball, tank)){//命中
+				ball.setLive(false);//立刻使炮弹死亡
+
+			//击中boss
+				if(tank.getType() == Tank.BOSS){//Boss坦克被击中只是掉血，血掉完才会死亡
+					Boss boss = (Boss)tank;//此处boss就近原则，遮盖掉了全局变量
+					boss.lessBlood();
+					if(boss.getBlood() == 0){
+						boss.setLive(false);
+						bosses.remove(boss);
+					}
+			//击中hero
+				}else if(tank.getType() == Tank.HERO){//hero被击中，会立刻销毁，子弹所带来的回馈不在此处完成
+					System.out.println("hero被击中！！！！！！！！");
+					tank.setLive(false);
+			//击中enemy
+				}else{//如果被击中的是enemy，那要看是被谁击中的？
+					if(ball.getType() == Tank.BOSS){//被Boss击中，enemy获得增益，加血
+						Boss thisBoss = new Boss(tank.getX(),tank.getY(),tank.getDirection());
+						thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
+						bosses.add(thisBoss);
+						thisBoss.start();
+
+						tank.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
+						army.remove(tank);
+						return false;//boss击中enemy没有回馈
+					}else{//不然就是hero打击的，就死掉了，不可能是自己打的，一开始就限定了坦克类型
+						tank.setLive(false);
+						army.remove(tank);
+					}
+				}
+				return true;//只要击中任意一个坦克，都不会再去检测其他坦克了
+			}
+		}
+		return false;//能到达这里就是没有击中
+	}
+
+	public Vector<Tank> findTargetByBall(FireBall ball){
+		Vector<Tank> tanks = new Vector<>();
+		switch(ball.getType()){
+			case Tank.HERO:
+				tanks.addAll(army);
+				tanks.addAll(bosses);
+				break;
+			case Tank.ENEMY:
+				tanks.add(hero);
+				break;
+			case Tank.BOSS:
+				tanks.add(hero);
+				tanks.addAll(army);//暂时设定成【boss可以打击enemy】
+				break;
+		}
+		return tanks;
+	}
+
 	@Override
 	public void keyPressed(KeyEvent e){
 		int receive = e.getKeyCode();
+
+		if(hero.isLive())//只有坦克活着，才会执行坦克的操作
 		switch(receive){
 			case KeyEvent.VK_DOWN:
-				tank.setDirection(Tank.DOWN);//我方坦克也在运行中，按键改变方向
+				hero.setDirection(Tank.DOWN);//我方坦克也在运行中，按键改变方向
 				break;
 			case KeyEvent.VK_UP:
-				tank.setDirection(Tank.UP);
+				hero.setDirection(Tank.UP);
 				break;
 			case KeyEvent.VK_RIGHT:
-				tank.setDirection(Tank.RIGHT);
+				hero.setDirection(Tank.RIGHT);
 				break;
 			case KeyEvent.VK_LEFT:
-				tank.setDirection(Tank.LEFT);
+				hero.setDirection(Tank.LEFT);
 				break;
 			case KeyEvent.VK_SPACE://空格发射子弹
-				tank.fire();
+				hero.fire();
 				break;
+		}
+
+		switch(receive){
 			case KeyEvent.VK_S://停止画面
 				boss.setStop(true);
 				for(Enemy enemy : army){
@@ -165,9 +268,10 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 				for(Enemy enemy : army){
 					enemy.setStop(false);
 				}
+				boss.setStop(false);
 				break;
 		}
-		this.repaint();
+		this.repaint();//其实可有可无
 
 	}
 
@@ -181,19 +285,31 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 
 	@Override
 	public void run(){
+		long start = System.currentTimeMillis();
+		long end = 0;
 		while(true){
-			if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
+
+			end = System.currentTimeMillis();
+			if(end - start > 3 * 1000){
+				start = end;
+				if(!hero.isLive()){//3秒检测以下死没死，死掉了就复活
+					hero = new Hero(0,0,Tank.DOWN);
+					hero.start();
+				}
+			}
+
+		/*	if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
 				int x = (int) (Math.random() * GameFrame.width);
 				int y = (int) (Math.random() * GameFrame.height);
 				int direction = (int)(Math.random() * 4);
 				Enemy enemy = new Enemy(x, y, direction);
 				enemy.start();
 				army.add(enemy);
-			}
+			}*/
 
 			this.repaint();//时刻重绘
 			try{
-				Thread.sleep(1);//其他进程都是10毫秒刷新一次，那面板要小于10秒刷新
+				Thread.sleep(5);//其他进程都是10毫秒刷新一次，那面板要小于10秒刷新
 			}catch(InterruptedException e){
 				e.printStackTrace();
 			}
