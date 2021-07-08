@@ -17,15 +17,20 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	private final int DEFAULT_X = 250;//我方坦克坐标
 	private final int DEFAULT_Y = 400;
 
+	/*
+	事实证明，cache是必不可少的，否则，在判断坦克军团的循环中，又会摧毁坦克军团，这不是进程同步的问题，
+	这是一个逻辑漏洞，
+	还有，final的集合居然是可以添加元素的，
+	 */
 
-	private int enemyNum = 25; //enemy数量
+	private final int enemyNum = 25; //enemy数量
 	private Hero hero = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//我方坦克
-	private Vector<Enemy> army = enemyArmy(enemyNum);//敌人坦克军团
-	private Vector<Enemy> armyCutCache = new Vector<>();//敌人坦克军团缓存
+	private final Vector<Enemy> army = enemyArmy(enemyNum);//敌人坦克军团
+	private final Vector<Enemy> armyCutCache = new Vector<>();//敌人坦克军团缓存
 
-	private Boss boss = new Boss(200, 200, Tank.UP);//敌方Boss
-	private Vector<Boss> bosses = new Vector<>();//boss军团
-	private Vector<Boss> bossAddCache = new Vector<>();//boss军团新增添的成员
+	private final Boss boss = new Boss(200, 200, Tank.UP);//敌方Boss
+	private final Vector<Boss> bosses = new Vector<>();//boss军团
+	private final Vector<Boss> bossAddCache = new Vector<>();//boss军团新增添的成员
 
 
 	{//敌人坦克 要么在这里开启，要么在army函数内开启，都一样,将来可以设置按钮
@@ -197,8 +202,8 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 					tank.setLive(false);
 			//击中enemy
 				}else{//如果被击中的是enemy，那要看是被谁击中的？
+					Enemy enemy = (Enemy)tank;
 					if(ball.getType() == Tank.BOSS){//被Boss击中，enemy获得增益，加血
-						Enemy enemy = (Enemy)tank;
 						Boss thisBoss = new Boss(enemy.getX(),enemy.getY(),enemy.getDirection());
 						thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
 						bossAddCache.add(thisBoss);
@@ -209,7 +214,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 						return false;//boss击中enemy没有回馈
 					}else{//不然就是hero打击的，就死掉了，不可能是自己打的，一开始就限定了坦克类型
 						tank.setLive(false);
-						army.remove(tank);
+						armyCutCache.add(enemy);
 					}
 				}
 				return true;//只要击中任意一个坦克，都不会再去检测其他坦克了
@@ -288,9 +293,8 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	@Override
 	public void run(){
 		long start = System.currentTimeMillis();
-		long end = 0;
+		long end;
 		while(true){
-
 			end = System.currentTimeMillis();
 			if(end - start > 3 * 1000){
 				start = end;
