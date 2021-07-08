@@ -8,6 +8,6 @@ import tank.Tank;
  */
 public class Test{
 	public static void draw(){
-		Tank tank = new Tank();
+		//Tank tank = new Tank();
 	}
 }

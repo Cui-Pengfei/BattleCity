@@ -13,30 +13,50 @@ public class FireBall extends Thread{
 	private int x;
 	private int y;//坐标
 	private int direction;//炮弹打向的方向 上下左右，与坦克炮管方向一致
-	private int size = 10;//直径
-	private Color color = Color.RED;//默认炮弹颜色是红色
-	private int type = Tank.BOSS;//哪种坦克的炮弹
+	private int size;//直径
+	private Color color;//默认炮弹颜色是红色
+	private int type;//哪种坦克的炮弹
 	private boolean live = true;//炮弹是否存活
-	private int speed = 6;//越大速度越快
+	private int speed;//越大速度越快
 
-	public FireBall(int x, int y, int direction, int size, Color color){
+	public FireBall(int x, int y, int type, int direction, int size, Color color){
 		this.color = color;
 		this.x = x;
 		this.y = y;
 		this.direction = direction;
 		this.size = size;
+		this.type = type;
 	}
 
 	//这是最基本的构造器，颜色和大小用默认值
-	public FireBall(int x, int y, int direction){
+	public FireBall(int x, int y, int direction, int type){
 		this.x = x;
 		this.y = y;
 		this.direction = direction;
+		this.type = type;
 	}
 
 	public FireBall(int size, Color color){
 		this.size = size;
 		this.color = color;
+	}
+
+	public FireBall(int size, Color color, int type, int speed){
+		this.size = size;
+		this.color = color;
+		this.type = type;
+		this.speed = speed;
+	}
+
+	public FireBall(int x, int y, int direction, int size, Color color, int type, boolean live, int speed){
+		this.x = x;
+		this.y = y;
+		this.direction = direction;
+		this.size = size;
+		this.color = color;
+		this.type = type;
+		this.live = live;
+		this.speed = speed;
 	}
 
 	//炮弹的圆心横坐标
@@ -51,10 +71,7 @@ public class FireBall extends Thread{
 
 	@Override
 	public void run(){
-		long start = System.currentTimeMillis();
-		long now;
 		while(live){
-			now = System.currentTimeMillis();
 			switch(direction){
 				case Tank.UP:
 					y -= speed;
@@ -81,6 +98,19 @@ public class FireBall extends Thread{
 			}
 		}
 	}//end run
+
+	public static FireBall copyBall(FireBall ball){
+		int x = ball.x;
+		int y = ball.y;//坐标
+		int direction = ball.direction;//炮弹打向的方向 上下左右，与坦克炮管方向一致
+		int size = ball.size;//直径
+		Color color = ball.color;//默认炮弹颜色是红色
+		int type = ball.type;//哪种坦克的炮弹
+		boolean live = ball.live;//炮弹是否存活
+		int speed = ball.speed;//越大速度越快
+
+		return new FireBall(x,y,direction,size,color,type,live,speed);
+	}
 
 	public boolean isLive(){
 		return live;

@@ -2,14 +2,13 @@ package tank;
 
 import frame.GameFrame;
 
-import java.awt.*;
 import java.util.Vector;
 
 /**
  * @author CPF 创建于： 2021/7/1 9:46
  * @version 1.0
  */
-public class Tank extends Thread{
+public abstract class Tank extends Thread{
 	//规定坦克方向与对应的数字
 	public static final int UP = 0;
 	public static final int DOWN = 1;
@@ -26,9 +25,9 @@ public class Tank extends Thread{
 	private int y;//坦克的纵坐标
 	private int direction;//坦克炮口指向的方向（上下左右）
 	private int type;//坦克的种类（我方、敌方、boss）
-	private int speed = 5;//坦克的速度
+	private int speed ;//坦克的速度
 	private boolean live = true;//是否存活
-	private FireBall ball = new FireBall(10,Color.RED);//每个坦克都有自己的炮弹
+	private FireBall ball ;//每个坦克都有自己的炮弹
 	private boolean runnable = true;
 	private boolean stop = false;
 
@@ -61,7 +60,7 @@ public class Tank extends Thread{
 		long nowDirect, nowFire,nowClear;
 		int fireTime = 3000;
 		int oneDirectionTime = 5 * 1000;//5秒改变一个方向
-		int clearTime = 5 * 1000;//5秒清理一次弹夹
+		int clearTime = 3 * 1000;//5秒清理一次弹夹
 		int randomDirect;
 		while(live){//存活的坦克才有线程
 			nowDirect = System.currentTimeMillis();
@@ -181,16 +180,18 @@ public class Tank extends Thread{
 	}
 	
 	public void touchReact(Tank tank){
-		//如果相向运动，建议其中一个往相反方向走，本坦克也转向
-		if(this.direction == UP && tank.direction == DOWN ||
-		    this.direction == DOWN && tank.direction == UP ||
-	             this.direction == LEFT && tank.direction == RIGHT ||
-		             this.direction == RIGHT && tank.direction == LEFT){
+		//如果相向运动，建议其中一个往相反方向走
+		if(this.direction == UP && tank.direction == DOWN
+			|| this.direction == DOWN && tank.direction == UP
+			|| this.direction == LEFT && tank.direction == RIGHT
+			|| this.direction == RIGHT && tank.direction == LEFT){
 			this.reverseDirect();
-		}/*else if(){//如果同向的话，也是要等待的，毕竟有一方
-
-		}*/
-		else if(tank.isTouch(this)){//双方头部互相进入，是最麻烦的，只能让双反都向相反方向才好
+		}else if(
+				(this.direction == UP && tank.direction == UP
+				|| this.direction == DOWN && tank.direction == DOWN
+				|| this.direction == LEFT && tank.direction == LEFT//同向,并且一方触墙,双方都换方向,防止一直卡在墙边
+				|| this.direction == RIGHT && tank.direction == RIGHT) && tank.isTouchBlock()
+				|| tank.isTouch(this)){//双方头部互相进入，是最麻烦的，只能让双反都向相反方向,防止一直卡
 			this.reverseDirect();
 			tank.reverseDirect();
 		}else{
@@ -301,33 +302,56 @@ public class Tank extends Thread{
 		}
 	}
 
+	//开火函数 各种坦克都有自己的方式，此处定义他们相同的模板
+	class Point{
+		int x;
+		int y;
+		public Point(){
+		}
+		public Point(int x, int y){
+			this.x = x;
+			this.y = y;
+		}
+	}
 
-	//开火函数
-	public void fire(){
-		int ballX = x;
-		int ballY = y;
+	public Point getTankMouth(){
+		int mouthX = x;
+		int mouthY = y;
 		switch(direction){//不同方向要不同地调整像素，保证炮弹从炮口射出
 			case Tank.UP:
-				ballX = x + 20 - ball.getSize() / 2;
+				mouthX = x + 20 - ball.getSize() / 2;
+				mouthY = y - ball.getSize() / 2;
 				break;
 			case Tank.DOWN:
-				ballX = x + 20 - ball.getSize() / 2;
-				ballY = y + 60;
+				mouthX = x + 20 - ball.getSize() / 2;
+				mouthY = y + 60 - ball.getSize() / 2;;
 				break;
 			case Tank.LEFT:
-				ballX = x - 10;
-				ballY = y + 30 - ball.getSize() / 2;
+				mouthX = x - 10 - ball.getSize() / 2;;
+				mouthY = y + 30 - ball.getSize() / 2;
 				break;
 			case Tank.RIGHT:
-				ballX = x + 50;
-				ballY = y + 30 - ball.getSize() / 2;
+				mouthX = x + 50 - ball.getSize() / 2;;
+				mouthY = y + 30 - ball.getSize() / 2;
 				break;
 		}
+		return new Point(mouthX,mouthY);
+	}
 
-		FireBall ball = new FireBall(ballX, ballY, direction, this.ball.getSize(), this.ball.getColor());
+	abstract void fire();
+
+	public void fire(FireBall ball){
+		Point mouth = this.getTankMouth();
+		ball.setX(mouth.x);
+		ball.setY(mouth.y);
+
 		balls.add(ball);
 		ball.start();
+
+
 	}
+
+
 
 
 	//getter\setter

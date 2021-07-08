@@ -9,19 +9,25 @@ import java.awt.*;
 public class Enemy extends Tank{
 	private static int number = 0;
 
-	{//由于有空构造器，不得已而为之
+	{//初始化器
 		setSpeed(1);//速度搞慢点
-		setBall(new FireBall(5, Color.ORANGE));
+		setBall(new FireBall(5,Color.ORANGE, Tank.ENEMY, 3));
 		setType(Tank.ENEMY);
 		getBall().setType(Tank.ENEMY);
+		setName("enemy" + number);
+		number++;
 	}
 
 	public Enemy(){
 	}
 	public Enemy(int x, int y, int direction){
 		super(x, y, direction);
-		number++;
-		setName("enemy" + number);
 	}
 
+	@Override
+	public void fire(){
+		getBall().setDirection(getDirection());
+		FireBall newBall = FireBall.copyBall(getBall());
+		super.fire(newBall);
+	}
 }

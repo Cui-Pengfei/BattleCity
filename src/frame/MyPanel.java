@@ -18,11 +18,15 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	private final int DEFAULT_Y = 400;
 
 
-	private int enemyNum = 1; //enemy数量
+	private int enemyNum = 25; //enemy数量
 	private Hero hero = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//我方坦克
 	private Vector<Enemy> army = enemyArmy(enemyNum);//敌人坦克军团
+	private Vector<Enemy> armyCutCache = new Vector<>();//敌人坦克军团缓存
+
 	private Boss boss = new Boss(200, 200, Tank.UP);//敌方Boss
 	private Vector<Boss> bosses = new Vector<>();//boss军团
+	private Vector<Boss> bossAddCache = new Vector<>();//boss军团新增添的成员
+
 
 	{//敌人坦克 要么在这里开启，要么在army函数内开启，都一样,将来可以设置按钮
 		///////////////////////
@@ -49,6 +53,15 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 			}
 		}
 
+		//再检测是否有坦克被boss击中(击中enemy是没有反馈的)
+		for(Boss boss : bosses){
+			for(FireBall ball : boss.getBalls()){
+				if(ball.isLive() && isHitTarget(ball)){
+					boss.returnBlood();
+				}
+			}
+		}
+
 		//检测是否有坦克被enemy炮弹击中
 		for(Enemy enemy : army){
 			for(FireBall ball : enemy.getBalls()){
@@ -60,16 +73,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 					thisBoss.start();
 
 					enemy.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
-					army.remove(enemy);
-				}
-			}
-		}
-
-		//再检测是否有坦克被boss击中(击中enemy是没有反馈的)
-		for(Boss boss : bosses){
-			for(FireBall ball : boss.getBalls()){
-				if(ball.isLive() && isHitTarget(ball)){
-					boss.returnBlood();
+					armyCutCache.add(enemy);
 				}
 			}
 		}
@@ -92,9 +96,9 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 			//绘制敌方炮弹
 			Vector<FireBall> balls = enemy.getBalls();
 			if(balls.size() != 0){
-					for(FireBall ball : balls){
-					if(ball.isLive())//只有存活的炮弹才能被刷新
-						MyTool.drawFire(g, ball);//把每个炮弹都画出来
+				for(FireBall ball : balls){
+				if(ball.isLive())//只有存活的炮弹才能被刷新
+					MyTool.drawFire(g, ball);//把每个炮弹都画出来
 				}
 			}
 		}//敌方·普通坦克
@@ -125,7 +129,11 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 			}
 		}
 
-
+		//在所有坦克及炮弹绘制完之后，再清理死掉的坦克，不然死掉的坦克的子弹就不显示了
+		army.removeAll(armyCutCache);//防止在遍历集合的同时减少集合元素数量
+		armyCutCache.clear();
+		bosses.addAll(bossAddCache);//只能等本轮检查完毕再添加，不然就成了【在本轮遍历的同时，增加了遍历次数】
+		bossAddCache.clear();
 	}//end paint()
 
 	public Vector<Enemy> enemyArmy(int number){//敌方坦克大军
@@ -172,12 +180,6 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 
 		Vector<Tank> tanks = findTargetByBall(ball);//得到的都是此炮弹可攻击的坦克
 
-		if(ball.getType() == Tank.HERO){
-			for(Tank tank : tanks){
-				System.out.println(tank.getName());
-			}
-		}
-
 		for(Tank tank : tanks){
 			if(tank.isLive() && MyTool.isSuccessHit(ball, tank)){//命中
 				ball.setLive(false);//立刻使炮弹死亡
@@ -192,18 +194,18 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 					}
 			//击中hero
 				}else if(tank.getType() == Tank.HERO){//hero被击中，会立刻销毁，子弹所带来的回馈不在此处完成
-					System.out.println("hero被击中！！！！！！！！");
 					tank.setLive(false);
 			//击中enemy
 				}else{//如果被击中的是enemy，那要看是被谁击中的？
 					if(ball.getType() == Tank.BOSS){//被Boss击中，enemy获得增益，加血
-						Boss thisBoss = new Boss(tank.getX(),tank.getY(),tank.getDirection());
+						Enemy enemy = (Enemy)tank;
+						Boss thisBoss = new Boss(enemy.getX(),enemy.getY(),enemy.getDirection());
 						thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
-						bosses.add(thisBoss);
+						bossAddCache.add(thisBoss);
 						thisBoss.start();
 
-						tank.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
-						army.remove(tank);
+						enemy.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
+						armyCutCache.add(enemy);//不能在遍历集合的时候删除集合元素，只能利用缓冲区
 						return false;//boss击中enemy没有回馈
 					}else{//不然就是hero打击的，就死掉了，不可能是自己打的，一开始就限定了坦克类型
 						tank.setLive(false);
