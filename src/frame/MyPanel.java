@@ -31,6 +31,9 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	private final Boss boss = new Boss(200, 200, Tank.UP);//敌方Boss
 	private final Vector<Boss> bosses = new Vector<>();//boss军团
 	private final Vector<Boss> bossAddCache = new Vector<>();//boss军团新增添的成员
+	private final Vector<Boss> bossCutCache = new Vector<>();//boss军团被消灭的成员
+
+	private final Vector<Tank> tankCutCache = new Vector<>();//所有废弃坦克集中处理，主要是它们射出去的炮弹问题
 
 
 	{//敌人坦克 要么在这里开启，要么在army函数内开启，都一样,将来可以设置按钮
@@ -76,7 +79,6 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 					thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
 					bosses.add(thisBoss);
 					thisBoss.start();
-
 					enemy.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
 					armyCutCache.add(enemy);
 				}
@@ -134,11 +136,33 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 			}
 		}
 
-		//在所有坦克及炮弹绘制完之后，再清理死掉的坦克，不然死掉的坦克的子弹就不显示了
+		//所有废弃的坦克都集中起来，要绘制它们发射的子弹，只有一个坦克发射的子弹也死亡了，才彻底清除掉他
+		tankCutCache.addAll(armyCutCache);
+		tankCutCache.addAll(bossCutCache);
+		Vector<Tank> cache = new Vector<>();
+		boolean tankClear = true;
+		for(Tank tank : tankCutCache){
+			for(FireBall ball : tank.getBalls()){
+				if(ball.isLive()){
+					tankClear = false;
+					MyTool.drawFire(g, ball);//把每个炮弹都画出来
+				}
+			}
+			if(tankClear){
+				cache.add(tank);
+			}
+		}
+		tankCutCache.removeAll(cache);
+
+
+		//清除坦克的变化，集合发生变动
 		army.removeAll(armyCutCache);//防止在遍历集合的同时减少集合元素数量
 		armyCutCache.clear();
 		bosses.addAll(bossAddCache);//只能等本轮检查完毕再添加，不然就成了【在本轮遍历的同时，增加了遍历次数】
 		bossAddCache.clear();
+		bosses.removeAll(bossCutCache);
+		bossCutCache.clear();
+
 	}//end paint()
 
 	public Vector<Enemy> enemyArmy(int number){//敌方坦克大军
@@ -195,11 +219,12 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 					boss.lessBlood();
 					if(boss.getBlood() == 0){
 						boss.setLive(false);
-						bosses.remove(boss);
+						bossCutCache.add(boss);
 					}
 			//击中hero
 				}else if(tank.getType() == Tank.HERO){//hero被击中，会立刻销毁，子弹所带来的回馈不在此处完成
 					tank.setLive(false);
+					tankCutCache.add(tank);
 			//击中enemy
 				}else{//如果被击中的是enemy，那要看是被谁击中的？
 					Enemy enemy = (Enemy)tank;

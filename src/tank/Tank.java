@@ -60,7 +60,7 @@ public abstract class Tank extends Thread{
 		long nowDirect, nowFire,nowClear;
 		int fireTime = 3000;
 		int oneDirectionTime = 5 * 1000;//5秒改变一个方向
-		int clearTime = 3 * 1000;//5秒清理一次弹夹
+		int clearTime = 10 * 1000;//10秒清理一次弹夹
 		int randomDirect;
 		while(live){//存活的坦克才有线程
 			nowDirect = System.currentTimeMillis();
