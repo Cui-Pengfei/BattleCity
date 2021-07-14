@@ -7,13 +7,35 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Vector;
 
 /**
  * @author CPF 创建于： 2021/7/1 10:34
  * @version 1.0
  */
-public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画板
+public class MyPanel extends JPanel implements KeyListener, Runnable, Serializable{//我的画板
+	private final int width;//战场的长宽 通过构造器由游戏框架传过来
+	private final int height;
+
+	public MyPanel(int width, int height){
+		this.width = width;
+		this.height = height;
+	}
+
+	@Override
+	public int getWidth(){
+		return width;
+	}
+
+	@Override
+	public int getHeight(){
+		return height;
+	}
+
 	private final int DEFAULT_X = 250;//我方坦克坐标
 	private final int DEFAULT_Y = 400;
 
@@ -35,6 +57,34 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 
 	private final Vector<Tank> tankCutCache = new Vector<>();//所有废弃坦克集中处理，主要是它们射出去的炮弹问题
 
+	public void reStart(){
+		//hero
+		if(hero.isLive())
+			hero.start();
+		for(FireBall ball : hero.getBalls()){
+			//if(ball.isLive())
+			ball.start();
+		}
+		//boss
+		for(Boss boss : bosses){
+			if(boss.isLive())
+				boss.start();
+			for(FireBall ball : boss.getBalls()){
+				//if(ball.isLive())
+					ball.start();
+			}
+		}
+		//enemy
+		for(Enemy enemy : army){
+			if(enemy.isLive())
+				enemy.start();
+			for(FireBall ball : enemy.getBalls()){
+				//if(ball.isLive())
+					ball.start();
+			}
+		}
+	}
+
 
 	{//敌人坦克 要么在这里开启，要么在army函数内开启，都一样,将来可以设置按钮
 		///////////////////////
@@ -50,10 +100,11 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 	@Override
 	public void paint(Graphics g){
 		super.paint(g);
-		g.setColor(Color.DARK_GRAY);//设置画板的背景颜色
-		g.fillRect(0, 0, GameFrame.width, GameFrame.height);
+		/*设置战场的背景颜色*/
+		g.setColor(Color.DARK_GRAY);
+		g.fillRect(0, 0, width, height);
 
-		//检测是否有坦克被我打死
+		/*检测是否有坦克被我打死*/
 		if(hero.getBalls().size() != 0)
 		for(FireBall ball : hero.getBalls()){//检测我的每一发炮弹
 			if(isHitTarget(ball)){
@@ -290,18 +341,67 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 		}
 
 		switch(receive){
-			case KeyEvent.VK_S://停止画面
-				boss.setStop(true);
+			case KeyEvent.VK_S://停止画面 hero不停止
+				//boss及其炮弹静止
+				for(Boss boss1 : bosses){
+					boss1.setStop(true);
+					for(FireBall ball : boss1.getBalls()){
+						ball.setStop(true);
+					}
+
+				}
+				//enemy及其炮弹静止
 				for(Enemy enemy : army){
 					enemy.setStop(true);
+					for(FireBall ball : enemy.getBalls()){
+						ball.setStop(true);
+					}
+				}
+				//在那一瞬间死掉的坦克的炮弹
+				for(Tank tank : tankCutCache){
+					for(FireBall ball : tank.getBalls()){
+						ball.setStop(true);
+					}
 				}
 				break;
 			case KeyEvent.VK_B://启动画面
 				for(Enemy enemy : army){
 					enemy.setStop(false);
+					for(FireBall ball : enemy.getBalls()){
+						ball.setStop(false);
+					}
+
 				}
-				boss.setStop(false);
+				for(Boss boss1 : bosses){
+					boss1.setStop(false);
+					for(FireBall ball : boss1.getBalls()){
+						ball.setStop(false);
+					}
+				}
+				for(Tank tank : tankCutCache){
+					for(FireBall ball : tank.getBalls()){
+						ball.setStop(false);
+					}
+				}
 				break;
+			case KeyEvent.VK_V://保存战场类到文件
+				ObjectOutputStream oos = null;
+				try{
+					oos = new ObjectOutputStream(new FileOutputStream("src/data/Panel.dat"));
+					oos.writeObject(this);
+				}catch(IOException ioException){
+					System.out.println("打开文件异常：" + e);
+				}finally{
+					if(oos!=null){
+						try{
+							oos.close();
+						}catch(IOException ioException){
+							System.out.println("对象输出流关闭异常：" + e);
+						}
+					}
+				}
+				break;
+
 		}
 		this.repaint();//其实可有可无
 
@@ -330,7 +430,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable{//我的画
 			}
 
 		/*	if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
-				int x = (int) (Math.random() * GameFrame.width);
+				int x = (int) (Math.random() * GameFrame.width - GameFrame.contentWidth);
 				int y = (int) (Math.random() * GameFrame.height);
 				int direction = (int)(Math.random() * 4);
 				Enemy enemy = new Enemy(x, y, direction);

@@ -3,13 +3,14 @@ package tank;
 import frame.GameFrame;
 
 import java.awt.*;
+import java.io.Serializable;
 
 /**
  * @author CPF 创建于： 2021/7/5 15:24
  * @version 1.0
  * 这是坦克发射的炮弹,是独立的线程
  */
-public class FireBall extends Thread{
+public class FireBall extends Thread implements Serializable{
 	private int x;
 	private int y;//坐标
 	private int direction;//炮弹打向的方向 上下左右，与坦克炮管方向一致
@@ -18,6 +19,7 @@ public class FireBall extends Thread{
 	private int type;//哪种坦克的炮弹
 	private boolean live = true;//炮弹是否存活
 	private int speed;//越大速度越快
+	private boolean stop = false;
 
 	public FireBall(int x, int y, int type, int direction, int size, Color color){
 		this.color = color;
@@ -72,27 +74,30 @@ public class FireBall extends Thread{
 	@Override
 	public void run(){
 		while(live){
-			switch(direction){
-				case Tank.UP:
-					y -= speed;
-					break;
-				case Tank.DOWN:
-					y += speed;
-					break;
-				case Tank.LEFT:
-					x -= speed;
-					break;
-				case Tank.RIGHT:
-					x += speed;
-					break;
-				//不会有default,为了使编译器限定死，以后可以把方向设计成枚举类型
+			if(!stop){//此处控制炮弹静止
+				switch(direction){
+					case Tank.UP:
+						y -= speed;
+						break;
+					case Tank.DOWN:
+						y += speed;
+						break;
+					case Tank.LEFT:
+						x -= speed;
+						break;
+					case Tank.RIGHT:
+						x += speed;
+						break;
+					//不会有default,为了使编译器限定死，以后可以把方向设计成枚举类型
+				}
 			}
+
 			try{
 				Thread.sleep(10);//无限循环不能总是运行呀
 			}catch(InterruptedException e){
 				e.printStackTrace();
 			}
-			if(x < 0 || x > GameFrame.width || y < 0 || y > GameFrame.height){//炮弹超出战场就退线程
+			if(x < 0 || x > GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH || y < 0 || y > GameFrame.SCREEN_HEIGHT){//炮弹超出战场就退线程
 				live = false;
 				//break;
 			}
@@ -165,5 +170,13 @@ public class FireBall extends Thread{
 	}
 	public void setType(int type){
 		this.type = type;
+	}
+
+	public boolean isStop(){
+		return stop;
+	}
+
+	public void setStop(boolean stop){
+		this.stop = stop;
 	}
 }

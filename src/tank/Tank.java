@@ -2,13 +2,14 @@ package tank;
 
 import frame.GameFrame;
 
+import java.io.Serializable;
 import java.util.Vector;
 
 /**
  * @author CPF 创建于： 2021/7/1 9:46
  * @version 1.0
  */
-public abstract class Tank extends Thread{
+public abstract class Tank extends Thread implements Serializable{
 	//规定坦克方向与对应的数字
 	public static final int UP = 0;
 	public static final int DOWN = 1;
@@ -135,8 +136,8 @@ public abstract class Tank extends Thread{
 	//向下移动
 	public void moveDown(){
 		setDirection(Tank.DOWN);
-		if(y + 60 + speed >= GameFrame.height){
-			y = GameFrame.height - 60;
+		if(y + 60 + speed >= GameFrame.SCREEN_HEIGHT){
+			y = GameFrame.SCREEN_HEIGHT - 60;
 			if(type != Tank.HERO)
 				direction = Tank.UP;
 		}else{
@@ -148,8 +149,8 @@ public abstract class Tank extends Thread{
 	//向右移动
 	public void moveRight(){
 		setDirection(Tank.RIGHT);
-		if(x + 50 >= GameFrame.width){
-			x = GameFrame.width - 50;
+		if(x + 50 >= GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH){
+			x = GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH - 50;
 			if(type != Tank.HERO)
 				direction = Tank.LEFT;
 		}else{
@@ -206,13 +207,13 @@ public abstract class Tank extends Thread{
 				if(y < threshold)
 					return true;
 			case DOWN:
-				if(y > GameFrame.height - threshold)
+				if(y > GameFrame.SCREEN_HEIGHT - threshold)
 					return true;
 			case LEFT:
 				if(y < threshold)
 					return true;
 			case RIGHT:
-				if(y > GameFrame.width - threshold)
+				if(y > GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH - threshold)
 					return true;
 		}
 		return false;

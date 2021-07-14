@@ -12,8 +12,7 @@ public class Hero extends Tank{
 		super(x, y,direction);
 		setType(Tank.HERO);
 		setSpeed(2);//我方坦克快些
-		setBall(new FireBall(10, Color.CYAN));
-		setBall(new FireBall(10,Color.CYAN, Tank.HERO, 4));
+		setBall(new FireBall(10,Color.CYAN, Tank.HERO, 8));
 		setName("Hero");
 		getBall().setType(Tank.HERO);
 	}

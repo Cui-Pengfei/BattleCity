@@ -11,7 +11,7 @@ public class Enemy extends Tank{
 
 	{//初始化器
 		setSpeed(1);//速度搞慢点
-		setBall(new FireBall(5,Color.ORANGE, Tank.ENEMY, 3));
+		setBall(new FireBall(5,Color.ORANGE, Tank.ENEMY, 6));
 		setType(Tank.ENEMY);
 		getBall().setType(Tank.ENEMY);
 		setName("enemy" + number);

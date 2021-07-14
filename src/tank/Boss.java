@@ -12,7 +12,7 @@ public class Boss extends Tank{
 	{//初始化器
 		setType(Tank.BOSS);
 		setSpeed(2);
-		setBall(new FireBall(15,Color.RED, Tank.BOSS, 5));
+		setBall(new FireBall(15,Color.RED, Tank.BOSS, 10));
 		setName("boss");
 	}
 
