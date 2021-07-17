@@ -429,9 +429,9 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 				}
 			}
 
-		/*	if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
-				int x = (int) (Math.random() * GameFrame.width - GameFrame.contentWidth);
-				int y = (int) (Math.random() * GameFrame.height);
+			/*if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
+				int x = (int) (Math.random() * (GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH));
+				int y = (int) (Math.random() * GameFrame.SCREEN_HEIGHT);
 				int direction = (int)(Math.random() * 4);
 				Enemy enemy = new Enemy(x, y, direction);
 				enemy.start();
