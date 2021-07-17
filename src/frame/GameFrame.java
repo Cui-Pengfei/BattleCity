@@ -1,6 +1,8 @@
 package frame;
 
 import javax.swing.*;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,14 +12,14 @@ import java.util.Scanner;
  * @author CPF 创建于： 2021/7/1 11:02
  * @version 1.0
  */
-public class GameFrame extends JFrame{
+public class GameFrame extends JFrame implements WindowListener{
 	public static final int SCREEN_WIDTH = 1228;//全屏时整个屏幕最大长宽
 	public static final int SCREEN_HEIGHT = 666;
 	public static final int RECORD_WIDTH = 200;//给记录内容在右边腾出200像素的框架
 
-	public GameFrame(){
-		MyPanel mp = null;
+	private MyPanel mp = null;
 
+	public GameFrame(){
 		System.out.println("请问重新开始游戏？(y/n)");
 		Scanner scanner = new Scanner(System.in);
 		char select = scanner.next().charAt(0);
@@ -39,8 +41,10 @@ public class GameFrame extends JFrame{
 					}
 			}
 		}else{
-			mp = new MyPanel(SCREEN_WIDTH - RECORD_WIDTH, SCREEN_HEIGHT);//规定战场的长宽
+			mp = new MyPanel();
 		}
+
+		this.addWindowListener(this);
 
 		this.addKeyListener(mp);//把画板加入事件监听
 		this.add(mp);
@@ -51,5 +55,44 @@ public class GameFrame extends JFrame{
 
 		Thread panelThread = new Thread(mp);//面板线程启动，目的是刷新
 		panelThread.start();
+	}
+
+	/**
+	 * 关闭主窗口处理
+	 */
+	@Override
+	public void windowClosed(WindowEvent e){
+	}
+
+	@Override
+	public void windowClosing(WindowEvent e) {
+		mp.warStop();//关闭游戏就先静止
+		mp.saveWar();//保存游戏后关闭窗口
+	}
+
+	@Override
+	public void windowOpened(WindowEvent e){
+
+	}
+
+
+	@Override
+	public void windowIconified(WindowEvent e){
+
+	}
+
+	@Override
+	public void windowDeiconified(WindowEvent e){
+
+	}
+
+	@Override
+	public void windowActivated(WindowEvent e){
+
+	}
+
+	@Override
+	public void windowDeactivated(WindowEvent e){
+
 	}
 }

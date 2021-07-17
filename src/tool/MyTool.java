@@ -1,6 +1,8 @@
 package tool;
 
-import com.sun.org.apache.bcel.internal.generic.BREAKPOINT;
+import data.Record;
+import frame.GameFrame;
+import org.junit.Test;
 import tank.Boss;
 import tank.FireBall;
 import tank.Tank;
@@ -12,6 +14,54 @@ import java.awt.*;
  * @version 1.0
  */
 public class MyTool{
+
+	/*绘制一局游戏的记录数据*/
+	public static void drawRecord(Graphics g, Record record){
+		int x = record.getX();
+		int y = record.getY();
+
+		/*标题*/
+		g.setColor(Color.DARK_GRAY);//文字黑色
+		g.setFont(new Font("宋体", Font.BOLD, 20));//设置字体、加粗、字号
+		g.drawString("玩家游戏数据：", x, y);
+		/*游戏时间*/
+		long time = (record.getGameEndTime() - record.getGameStartTime()) / 1000;//一共多少秒
+		/*
+		1 hour = 60 minutes
+		1 minute = 60 seconds
+		1 second = 1000 millisecond
+		假如有100000秒：
+		100000 % 60             = 秒数
+		(100000 % 3600) / 60    = 分钟数
+		100000 / 3600           = 小时数
+		*/
+		long hour = time / 3600;          //有多少小时
+		long minute = (time % 3600) / 60;   //有多少分钟
+		long second = time % 60;            //有多少秒
+		String gameTime = "游戏持续时间：";
+		if(hour != 0) gameTime += hour + "时";
+		if(minute != 0) gameTime += minute + "分";
+		gameTime += second + "秒";
+
+		g.setFont(new Font("宋体", Font.BOLD, 15));
+		g.drawString(gameTime, x, y + 30);
+
+		g.drawString("击毁坦克数量如下：", x, y + 60);
+		drawTank(g, x, y + 90, Tank.UP, Tank.ENEMY);
+		g.drawString("X " + record.getDestroyEnemyNum(), x + 50, y + 120);
+		drawTank(g, x, y + 165, Tank.UP, Tank.BOSS);
+		g.drawString("X " + record.getDestroyBossNum(), x + 50, y + 195);
+
+		g.setColor(Color.DARK_GRAY);
+		g.drawString("被击毁次数如下：", x, y + 250);
+		drawTank(g, x, y + 270, Tank.UP, Tank.HERO);
+		g.drawString("X " + record.getDeaths(), x + 50, y + 300);
+
+
+
+
+	}
+
 
 	//绘制Boss坦克
 	public static void drawBoss(Graphics g, Boss boss){

@@ -1,5 +1,6 @@
 package frame;
 
+import data.Record;
 import tank.*;
 import tool.MyTool;
 
@@ -18,25 +19,11 @@ import java.util.Vector;
  * @version 1.0
  */
 public class MyPanel extends JPanel implements KeyListener, Runnable, Serializable{//我的画板
-	private final int width;//战场的长宽 通过构造器由游戏框架传过来
-	private final int height;
+	//战场的长宽
+	private final int WAR_WIDTH = GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH;
+	private final int WAR_HEIGHT = GameFrame.SCREEN_HEIGHT;
 
-	public MyPanel(int width, int height){
-		this.width = width;
-		this.height = height;
-	}
-
-	@Override
-	public int getWidth(){
-		return width;
-	}
-
-	@Override
-	public int getHeight(){
-		return height;
-	}
-
-	private final int DEFAULT_X = 250;//我方坦克坐标
+	private final int DEFAULT_X = 250;//我方坦克起始坐标
 	private final int DEFAULT_Y = 400;
 
 	/*
@@ -57,7 +44,26 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 
 	private final Vector<Tank> tankCutCache = new Vector<>();//所有废弃坦克集中处理，主要是它们射出去的炮弹问题
 
+	private Record record = new Record(WAR_WIDTH + 30, 30);//战场记录仪 边缘各让出30宽度，为了美观
+	{
+		/*战场计时器开始计时*/
+		record.setGameStartTime(System.currentTimeMillis());
+	}
+
+	/**
+	 * 继续上一局游戏，从文件中读出上一局记录的对象流，相关进程激活,毕竟保存进去的都是死进程的数据.
+	 */
 	public void reStart(){
+		/*重新开始时，记录的时间需要注意:
+		继续上一把游戏的时候，开始时间既不是现在的时间，也不是过去的那个开始时间，
+		而是现在时间 - 上一把持续时间
+		营造出持续游戏的感觉
+
+		 */
+		long nowTime = System.currentTimeMillis();
+		long recordGameTime = record.getGameEndTime() - record.getGameStartTime();
+		record.setGameStartTime(nowTime - recordGameTime);
+
 		//hero
 		if(hero.isLive())
 			hero.start();
@@ -71,7 +77,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 				boss.start();
 			for(FireBall ball : boss.getBalls()){
 				//if(ball.isLive())
-					ball.start();
+				ball.start();
 			}
 		}
 		//enemy
@@ -80,7 +86,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 				enemy.start();
 			for(FireBall ball : enemy.getBalls()){
 				//if(ball.isLive())
-					ball.start();
+				ball.start();
 			}
 		}
 	}
@@ -100,17 +106,21 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 	@Override
 	public void paint(Graphics g){
 		super.paint(g);
+
+		/*刷新记录数据*/
+		MyTool.drawRecord(g, record);
+
 		/*设置战场的背景颜色*/
 		g.setColor(Color.DARK_GRAY);
-		g.fillRect(0, 0, width, height);
+		g.fillRect(0, 0, WAR_WIDTH, WAR_HEIGHT);
 
 		/*检测是否有坦克被我打死*/
 		if(hero.getBalls().size() != 0)
-		for(FireBall ball : hero.getBalls()){//检测我的每一发炮弹
-			if(isHitTarget(ball)){
-				hero.ballGrow();//我方坦克击中目标增益
+			for(FireBall ball : hero.getBalls()){//检测我的每一发炮弹
+				if(isHitTarget(ball)){
+					hero.ballGrow();//我方坦克击中目标增益
+				}
 			}
-		}
 
 		//再检测是否有坦克被boss击中(击中enemy是没有反馈的)
 		for(Boss boss : bosses){
@@ -126,13 +136,24 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 			for(FireBall ball : enemy.getBalls()){
 				if(ball.isLive() && isHitTarget(ball)){
 					//他立功了，也变成了Boss(偷梁换柱，boss没有进入army集合)
-					Boss thisBoss = new Boss(enemy.getX(),enemy.getY(),enemy.getDirection());
+					Boss thisBoss = new Boss(enemy.getX(), enemy.getY(), enemy.getDirection());
 					thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
 					bosses.add(thisBoss);
 					thisBoss.start();
 					enemy.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
 					armyCutCache.add(enemy);
 				}
+			}
+		}
+
+		/*检测是否有被已经死亡的坦克仍然活着的炮弹击中的，
+		由于死掉的坦克已经没有命中增益的表现了，所以所有的废弃坦克可以集中处理炮弹.
+		* */
+
+		for(Tank tank : tankCutCache){
+			for(FireBall ball : tank.getBalls()){
+				if(isHitTarget(ball))
+					ball.setLive(false);
 			}
 		}
 
@@ -155,8 +176,8 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 			Vector<FireBall> balls = enemy.getBalls();
 			if(balls.size() != 0){
 				for(FireBall ball : balls){
-				if(ball.isLive())//只有存活的炮弹才能被刷新
-					MyTool.drawFire(g, ball);//把每个炮弹都画出来
+					if(ball.isLive())//只有存活的炮弹才能被刷新
+						MyTool.drawFire(g, ball);//把每个炮弹都画出来
 				}
 			}
 		}//敌方·普通坦克
@@ -176,7 +197,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 
 		//一辆我方坦克向上 可移动
 		if(hero.isLive())
-		MyTool.drawTank(g, hero.getX(), hero.getY(), hero.getDirection(), hero.getType());
+			MyTool.drawTank(g, hero.getX(), hero.getY(), hero.getDirection(), hero.getType());
 
 		//绘制我方炮弹
 		Vector<FireBall> balls = hero.getBalls();
@@ -214,6 +235,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 		bosses.removeAll(bossCutCache);
 		bossCutCache.clear();
 
+
 	}//end paint()
 
 	public Vector<Enemy> enemyArmy(int number){//敌方坦克大军
@@ -226,6 +248,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 
 	/**
 	 * 此方法可以防着一辆坦克重叠画面中的其他坦克.
+	 *
 	 * @param tank 此坦克不会重叠其他坦克
 	 */
 	public void insureNoOverlap(Tank tank){
@@ -252,6 +275,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 	/**
 	 * 监测一个小球是否击中目标.
 	 * 并完成击中目标所导致的目标的变化，此炮弹给发射者带来的反馈不在此处完成.
+	 *
 	 * @param ball 被监测的小球.
 	 */
 	public boolean isHitTarget(FireBall ball){
@@ -264,23 +288,25 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 			if(tank.isLive() && MyTool.isSuccessHit(ball, tank)){//命中
 				ball.setLive(false);//立刻使炮弹死亡
 
-			//击中boss
+				//击中boss
 				if(tank.getType() == Tank.BOSS){//Boss坦克被击中只是掉血，血掉完才会死亡
-					Boss boss = (Boss)tank;//此处boss就近原则，遮盖掉了全局变量
+					Boss boss = (Boss) tank;//此处boss就近原则，遮盖掉了全局变量
 					boss.lessBlood();
 					if(boss.getBlood() == 0){
+						record.destroyBossNumPlus();//击杀boss加一
 						boss.setLive(false);
 						bossCutCache.add(boss);
 					}
-			//击中hero
+					//击中hero
 				}else if(tank.getType() == Tank.HERO){//hero被击中，会立刻销毁，子弹所带来的回馈不在此处完成
 					tank.setLive(false);
 					tankCutCache.add(tank);
-			//击中enemy
+					record.deathPlus();//死亡次数加一
+					//击中enemy
 				}else{//如果被击中的是enemy，那要看是被谁击中的？
-					Enemy enemy = (Enemy)tank;
+					Enemy enemy = (Enemy) tank;
 					if(ball.getType() == Tank.BOSS){//被Boss击中，enemy获得增益，加血
-						Boss thisBoss = new Boss(enemy.getX(),enemy.getY(),enemy.getDirection());
+						Boss thisBoss = new Boss(enemy.getX(), enemy.getY(), enemy.getDirection());
 						thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
 						bossAddCache.add(thisBoss);
 						thisBoss.start();
@@ -291,6 +317,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 					}else{//不然就是hero打击的，就死掉了，不可能是自己打的，一开始就限定了坦克类型
 						tank.setLive(false);
 						armyCutCache.add(enemy);
+						record.destroyEnemyNumPlus();//击杀enemy加一
 					}
 				}
 				return true;//只要击中任意一个坦克，都不会再去检测其他坦克了
@@ -317,52 +344,77 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 		return tanks;
 	}
 
+	/*保存战场到文件，其实就是保存了一个MyPanel对象流*/
+	public boolean saveWar(){
+		ObjectOutputStream oos = null;
+		try{
+			oos = new ObjectOutputStream(new FileOutputStream("src/data/Panel.dat"));
+			oos.writeObject(this);
+		}catch(IOException e){
+			System.out.println("打开文件异常：" + e);
+			return false;
+		}finally{
+			if(oos != null){
+				try{
+					oos.close();
+				}catch(IOException e){
+					System.out.println("对象输出流关闭异常：" + e);
+				}
+			}
+		}
+		return true;
+	}
+
+	public void warStop(){
+		//boss及其炮弹静止
+		for(Boss boss1 : bosses){
+			boss1.setStop(true);
+			for(FireBall ball : boss1.getBalls()){
+				ball.setStop(true);
+			}
+
+		}
+		//enemy及其炮弹静止
+		for(Enemy enemy : army){
+			enemy.setStop(true);
+			for(FireBall ball : enemy.getBalls()){
+				ball.setStop(true);
+			}
+		}
+		//在那一瞬间死掉的坦克的炮弹
+		for(Tank tank : tankCutCache){
+			for(FireBall ball : tank.getBalls()){
+				ball.setStop(true);
+			}
+		}
+	}
+
 	@Override
 	public void keyPressed(KeyEvent e){
 		int receive = e.getKeyCode();
 
 		if(hero.isLive())//只有坦克活着，才会执行坦克的操作
-		switch(receive){
-			case KeyEvent.VK_DOWN:
-				hero.setDirection(Tank.DOWN);//我方坦克也在运行中，按键改变方向
-				break;
-			case KeyEvent.VK_UP:
-				hero.setDirection(Tank.UP);
-				break;
-			case KeyEvent.VK_RIGHT:
-				hero.setDirection(Tank.RIGHT);
-				break;
-			case KeyEvent.VK_LEFT:
-				hero.setDirection(Tank.LEFT);
-				break;
-			case KeyEvent.VK_SPACE://空格发射子弹
-				hero.fire();
-				break;
-		}
+			switch(receive){
+				case KeyEvent.VK_DOWN:
+					hero.setDirection(Tank.DOWN);//我方坦克也在运行中，按键改变方向
+					break;
+				case KeyEvent.VK_UP:
+					hero.setDirection(Tank.UP);
+					break;
+				case KeyEvent.VK_RIGHT:
+					hero.setDirection(Tank.RIGHT);
+					break;
+				case KeyEvent.VK_LEFT:
+					hero.setDirection(Tank.LEFT);
+					break;
+				case KeyEvent.VK_SPACE://空格发射子弹
+					hero.fire();
+					break;
+			}
 
 		switch(receive){
 			case KeyEvent.VK_S://停止画面 hero不停止
-				//boss及其炮弹静止
-				for(Boss boss1 : bosses){
-					boss1.setStop(true);
-					for(FireBall ball : boss1.getBalls()){
-						ball.setStop(true);
-					}
-
-				}
-				//enemy及其炮弹静止
-				for(Enemy enemy : army){
-					enemy.setStop(true);
-					for(FireBall ball : enemy.getBalls()){
-						ball.setStop(true);
-					}
-				}
-				//在那一瞬间死掉的坦克的炮弹
-				for(Tank tank : tankCutCache){
-					for(FireBall ball : tank.getBalls()){
-						ball.setStop(true);
-					}
-				}
+				warStop();
 				break;
 			case KeyEvent.VK_B://启动画面
 				for(Enemy enemy : army){
@@ -385,20 +437,10 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 				}
 				break;
 			case KeyEvent.VK_V://保存战场类到文件
-				ObjectOutputStream oos = null;
-				try{
-					oos = new ObjectOutputStream(new FileOutputStream("src/data/Panel.dat"));
-					oos.writeObject(this);
-				}catch(IOException ioException){
-					System.out.println("打开文件异常：" + e);
-				}finally{
-					if(oos!=null){
-						try{
-							oos.close();
-						}catch(IOException ioException){
-							System.out.println("对象输出流关闭异常：" + e);
-						}
-					}
+				if(saveWar()){
+					System.out.println("保存游戏成功！");
+				}else{
+					System.out.println("保存战场失败！");
 				}
 				break;
 
@@ -424,9 +466,14 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 			if(end - start > 3 * 1000){
 				start = end;
 				if(!hero.isLive()){//3秒检测以下死没死，死掉了就复活
-					hero = new Hero(0,0,Tank.DOWN);
+					hero = new Hero(0, 0, Tank.DOWN);
 					hero.start();
 				}
+			}
+
+			/*游戏，每时每刻都可能停止，要记录这个持续时间,但不必记得太勤，半秒就很快了*/
+			if(end - start > 500){
+				record.setGameEndTime(System.currentTimeMillis());
 			}
 
 			/*if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
@@ -446,5 +493,13 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 			}
 		}
 
+	}
+
+	public Record getRecord(){
+		return record;
+	}
+
+	public void setRecord(Record record){
+		this.record = record;
 	}
 }
