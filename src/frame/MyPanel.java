@@ -32,7 +32,8 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 	还有，final的集合居然是可以添加元素的，
 	 */
 
-	private final int enemyNum = 25; //enemy数量
+	private boolean warStatic = false;//战场静止
+	private final int enemyNum = 26; //enemy数量
 	private Hero hero = new Hero(DEFAULT_X, DEFAULT_Y, Tank.UP);//我方坦克
 	private final Vector<Enemy> army = enemyArmy(enemyNum);//敌人坦克军团
 	private final Vector<Enemy> armyCutCache = new Vector<>();//敌人坦克军团缓存
@@ -45,6 +46,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 	private final Vector<Tank> tankCutCache = new Vector<>();//所有废弃坦克集中处理，主要是它们射出去的炮弹问题
 
 	private Record record = new Record(WAR_WIDTH + 30, 30);//战场记录仪 边缘各让出30宽度，为了美观
+
 	{
 		/*战场计时器开始计时*/
 		record.setGameStartTime(System.currentTimeMillis());
@@ -136,21 +138,17 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 			for(FireBall ball : enemy.getBalls()){
 				if(ball.isLive() && isHitTarget(ball)){
 					//他立功了，也变成了Boss(偷梁换柱，boss没有进入army集合)
-					Boss thisBoss = new Boss(enemy.getX(), enemy.getY(), enemy.getDirection());
-					thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
-					bosses.add(thisBoss);
-					thisBoss.start();
-					enemy.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
-					armyCutCache.add(enemy);
+					turnBoss(enemy, bosses);
 				}
 			}
 		}
 
-		/*检测是否有被已经死亡的坦克仍然活着的炮弹击中的，
-		由于死掉的坦克已经没有命中增益的表现了，所以所有的废弃坦克可以集中处理炮弹.
-		但是死掉的坦克的炮弹命中，会导致死掉的坦克增加，因此此处不可以使用遍历集合的形式，而是应该先确定一个大小，
-		不检查本轮被击中的坦克的炮弹
-		* */
+		/*
+		检查死亡坦克的残留炮弹是否会击中其他坦克；
+		虽然死亡坦克种类不一，但是由于死掉的坦克不会有炮弹增益显示，所以处理方式都一致；
+		又因为死亡坦克的炮弹，所导致的坦克死亡，又会增加死亡坦克的数量，因此不可以用遍历集合；
+		其实由本轮导致的死亡坦克，不需要再检测炮弹，因为在此之前他们不是死掉的坦克，已经检查过炮弹了；
+		*/
 		int startSize = tankCutCache.size();
 		for(int tankNum = 0; tankNum < startSize; tankNum++){
 			for(FireBall ball : tankCutCache.get(tankNum).getBalls()){
@@ -161,9 +159,13 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 		}
 
 
-
-
-		for(Enemy enemy : army){//这是防止enemy碰撞其他坦克
+//////////////////////////////////////////////////////////////坦克很多时会出现异常
+		/*for(Enemy enemy : army){//这是防止enemy碰撞其他坦克
+			insureNoOverlap(enemy);
+		}*/
+		int size = army.size();
+		for(int i = 0; i < size; i++){
+			Enemy enemy = army.get(i);
 			insureNoOverlap(enemy);
 		}
 
@@ -175,7 +177,9 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 
 
 		//绘制敌方坦克
-		for(Enemy enemy : army){
+		int size1 = army.size();
+		for(int i = 0; i < size1; i++){
+			Enemy enemy = army.get(i);
 			if(enemy.isLive())//存活的坦克才能绘制出来
 				MyTool.drawTank(g, enemy);
 			//绘制敌方炮弹
@@ -186,7 +190,22 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 						MyTool.drawFire(g, ball);//把每个炮弹都画出来
 				}
 			}
-		}//敌方·普通坦克
+		}
+
+
+////////////////////////////////////////////////////////////////坦克很多时会出现异常
+/*		for(Enemy enemy : army){
+			if(enemy.isLive())//存活的坦克才能绘制出来
+				MyTool.drawTank(g, enemy);
+			//绘制敌方炮弹
+			Vector<FireBall> balls = enemy.getBalls();
+			if(balls.size() != 0){
+				for(FireBall ball : balls){
+					if(ball.isLive())//只有存活的炮弹才能被刷新
+						MyTool.drawFire(g, ball);//把每个炮弹都画出来
+				}
+			}
+		}//敌方·普通坦克*/
 
 
 		//绘制Boss 及炮弹
@@ -244,6 +263,18 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 
 	}//end paint()
 
+	private void turnBoss(Enemy enemy, Vector<Boss> bosses){
+		Boss thisBoss = new Boss(enemy.getX(), enemy.getY(), enemy.getDirection());
+		thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
+		if(warStatic){
+			thisBoss.setStop(true);
+		}
+		bosses.add(thisBoss);
+		thisBoss.start();
+		enemy.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
+		armyCutCache.add(enemy);
+	}
+
 	public Vector<Enemy> enemyArmy(int number){//敌方坦克大军
 		Vector<Enemy> army = new Vector<>(number);
 		for(int i = 0; i < number; i++){
@@ -258,13 +289,9 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 	 * @param tank 此坦克不会重叠其他坦克
 	 */
 	public void insureNoOverlap(Tank tank){
-		///////////////////////////////////////////////////////////////need to optimize
-		if(!tank.isLive())
+		if(tank != null && !tank.isLive())
 			return;//如果这个坦克死掉，就不检测了(由于清除坦克的迟滞性，死亡坦克可能被检测到) 好像也检测不到，再看了
-		Vector<Tank> needDetectTanks = new Vector<>();
-		needDetectTanks.addAll(army);
-		needDetectTanks.addAll(bosses);
-		needDetectTanks.add(hero);
+		Vector<Tank> needDetectTanks = getAllTanks();
 
 		for(Tank needDetectTank : needDetectTanks){
 			if(needDetectTank == tank || !needDetectTank.isLive())
@@ -312,13 +339,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 				}else{//如果被击中的是enemy，那要看是被谁击中的？
 					Enemy enemy = (Enemy) tank;
 					if(ball.getType() == Tank.BOSS){//被Boss击中，enemy获得增益，加血
-						Boss thisBoss = new Boss(enemy.getX(), enemy.getY(), enemy.getDirection());
-						thisBoss.setBlood(2);//2滴血 这样就相当于回血了 只后就走boss的路线了
-						bossAddCache.add(thisBoss);
-						thisBoss.start();
-
-						enemy.setLive(false);//让原来的enemy死掉并移除集合，狸猫换太子
-						armyCutCache.add(enemy);//不能在遍历集合的时候删除集合元素，只能利用缓冲区
+						turnBoss(enemy, bossAddCache);
 						return false;//boss击中enemy没有回馈
 					}else{//不然就是hero打击的，就死掉了，不可能是自己打的，一开始就限定了坦克类型
 						tank.setLive(false);
@@ -372,6 +393,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 	}
 
 	public void warStop(){
+		warStatic = true;
 		//boss及其炮弹静止
 		for(Boss boss1 : bosses){
 			boss1.setStop(true);
@@ -394,6 +416,81 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 			}
 		}
 	}
+
+	public Vector<Tank> getAllTanks(){
+		Vector<Tank> allTanks = new Vector<>();
+		allTanks.addAll(army);
+		allTanks.addAll(bosses);
+		allTanks.add(hero);
+		return allTanks;
+	}
+
+	/**
+	 * 随机生成一个不会重叠的坦克；不过有时候坦克非常多了很难不重叠，就设定只检查100次
+	 */
+	public boolean aTankBornRandom(int type){
+		int detectTime = 100;
+		boolean overlap;
+		Vector<Tank> allTanks = getAllTanks();
+		Tank bornTank = null;
+		switch(type){
+			case Tank.HERO:
+				bornTank = new Hero(0, 0, 0);
+				break;
+			case Tank.ENEMY:
+				bornTank = new Enemy(0, 0, 0);
+				break;
+			case Tank.BOSS:
+				bornTank = new Boss(0, 0, 0);
+				break;
+			default:
+				System.out.println("不会有这种坦克");
+				break;
+		}
+
+		do{
+			overlap = false;//每一轮都要满怀希望，假设是不会重叠的
+			detectTime--;
+			int x = (int) (Math.random() * (GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH - 120)) + 60;
+			int y = (int) (Math.random() * (GameFrame.SCREEN_HEIGHT - 120)) + 60;
+			int direction = (int) (Math.random() * 4);
+
+			bornTank.setX(x);
+			bornTank.setY(y);
+			bornTank.setDirection(direction);
+
+			for(Tank tank : allTanks){
+				if(tank == bornTank || !tank.isLive())
+					continue;//自身、死掉的坦克 不用比较
+				if(bornTank.isOverlap(tank)){
+					overlap = true;
+					break;//重叠一个就是重叠不用检查其他坦克了
+				}
+			}
+
+			if(!overlap){
+				if(warStatic){
+					bornTank.setStop(true);
+				}
+				bornTank.start();
+				if(bornTank instanceof Enemy){
+					Enemy enemy = (Enemy) bornTank;
+					army.add(enemy);
+				}
+				if(bornTank instanceof Boss){
+					Boss boss = (Boss)bornTank;
+					bosses.add(boss);
+				}
+
+			}
+		}while(overlap && detectTime > 0);
+
+		/*
+		overlap = true的话，说明是因为100次用完退出的循环；说明由于坦克太多，不再生产新的坦克，也就是生产坦克失败false
+		 */
+		return !overlap;
+	}
+
 
 	@Override
 	public void keyPressed(KeyEvent e){
@@ -482,14 +579,15 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 				record.setGameEndTime(System.currentTimeMillis());
 			}
 
-			/*if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
-				int x = (int) (Math.random() * (GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH));
-				int y = (int) (Math.random() * GameFrame.SCREEN_HEIGHT);
-				int direction = (int)(Math.random() * 4);
-				Enemy enemy = new Enemy(x, y, direction);
-				enemy.start();
-				army.add(enemy);
-			}*/
+			if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
+				if(bosses.size() < 30){
+					if(!aTankBornRandom(Tank.ENEMY)){
+						if(army.size() != 0)
+							System.out.println("坦克太多了，已经不建议再增加坦克了");
+					}
+				}
+
+			}
 
 			this.repaint();//时刻重绘
 			try{

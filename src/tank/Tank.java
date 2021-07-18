@@ -26,15 +26,16 @@ public abstract class Tank extends Thread implements Serializable{
 	private int y;//坦克的纵坐标
 	private int direction;//坦克炮口指向的方向（上下左右）
 	private int type;//坦克的种类（我方、敌方、boss）
-	private int speed ;//坦克的速度
+	private int speed;//坦克的速度
 	private boolean live = true;//是否存活
-	private FireBall ball ;//每个坦克都有自己的炮弹
+	private FireBall ball;//每个坦克都有自己的炮弹
 	private boolean runnable = true;
 	private boolean stop = false;
 
 	//炮弹本身自己就是一个线程，要自我操作自己的数据，MyPanel也是一个线程，绘制炮弹时，也要操作炮弹数据，balls所属类Tank也是一个线程
 	//因此必须使用Vector,才能避免出现异常
 	private Vector<FireBall> balls = new Vector<>();
+
 	public Vector<FireBall> getBalls(){
 		return balls;
 	}
@@ -58,7 +59,7 @@ public abstract class Tank extends Thread implements Serializable{
 		long startFire = System.currentTimeMillis();//开火时间控制
 		long startClear = System.currentTimeMillis();//清空弹夹时间控制
 
-		long nowDirect, nowFire,nowClear;
+		long nowDirect, nowFire, nowClear;
 		int fireTime = 3000;
 		int oneDirectionTime = 5 * 1000;//5秒改变一个方向
 		int clearTime = 10 * 1000;//10秒清理一次弹夹
@@ -176,23 +177,24 @@ public abstract class Tank extends Thread implements Serializable{
 	public int centerX(){
 		return x + 20;
 	}
+
 	public int centerY(){
 		return y + 30;
 	}
-	
+
 	public void touchReact(Tank tank){
 		//如果相向运动，建议其中一个往相反方向走
 		if(this.direction == UP && tank.direction == DOWN
-			|| this.direction == DOWN && tank.direction == UP
-			|| this.direction == LEFT && tank.direction == RIGHT
-			|| this.direction == RIGHT && tank.direction == LEFT){
+				|| this.direction == DOWN && tank.direction == UP
+				|| this.direction == LEFT && tank.direction == RIGHT
+				|| this.direction == RIGHT && tank.direction == LEFT){
 			this.reverseDirect();
 		}else if(
 				(this.direction == UP && tank.direction == UP
-				|| this.direction == DOWN && tank.direction == DOWN
-				|| this.direction == LEFT && tank.direction == LEFT//同向,并且一方触墙,双方都换方向,防止一直卡在墙边
-				|| this.direction == RIGHT && tank.direction == RIGHT) && tank.isTouchBlock()
-				|| tank.isTouch(this)){//双方头部互相进入，是最麻烦的，只能让双反都向相反方向,防止一直卡
+						|| this.direction == DOWN && tank.direction == DOWN
+						|| this.direction == LEFT && tank.direction == LEFT//同向,并且一方触墙,双方都换方向,防止一直卡在墙边
+						|| this.direction == RIGHT && tank.direction == RIGHT) && tank.isTouchBlock()
+						|| tank.isTouch(this)){//双方头部互相进入，是最麻烦的，只能让双反都向相反方向,防止一直卡
 			this.reverseDirect();
 			tank.reverseDirect();
 		}else{
@@ -223,39 +225,30 @@ public abstract class Tank extends Thread implements Serializable{
 	 * 判断此坦克是否与另一辆坦克即将相撞.
 	 * 种类非常多，而且需要不同的应变方式：
 	 * 一.此坦克向上运动
-	 *      1.遇到向上/向下的坦克 判断条件是一样的
+	 * 1.遇到向上/向下的坦克 判断条件是一样的
 	 *
 	 * @param tank 另一辆坦克
 	 * @return 返回true为即将撞上
 	 */
 	public boolean isTouch(Tank tank){
-		class Point{//内部点类
-			int x;
-			int y;
-			public Point(){}
-			public Point(int x, int y){
-				this.x = x;
-				this.y = y;
-			}
-		}
-		Point left = new Point(),right = new Point();
+		Point left = new Point(), right = new Point();
 
 		switch(direction){
 			case Tank.UP://此坦克 向上
-				left = new Point(x,y);
+				left = new Point(x, y);
 				right = new Point(x + 40, y);
 				break;
-				//由于上面是return 此处不用break了
+			//由于上面是return 此处不用break了
 			case Tank.DOWN:
-				left = new Point(x,y + 60);
+				left = new Point(x, y + 60);
 				right = new Point(x + 40, y + 60);
 				break;
 			case Tank.LEFT:
-				left = new Point(x - 10,y + 10);
+				left = new Point(x - 10, y + 10);
 				right = new Point(x - 10, y + 50);
 				break;
 			case Tank.RIGHT:
-				left = new Point(x + 50,y + 10);
+				left = new Point(x + 50, y + 10);
 				right = new Point(x + 50, y + 50);
 				break;
 			default:
@@ -263,11 +256,48 @@ public abstract class Tank extends Thread implements Serializable{
 				break;
 		}
 
-		if(isPointInTank(left.x,left.y,tank) || isPointInTank(right.x, right.y, tank)){
+		if(isPointInTank(left.x, left.y, tank) || isPointInTank(right.x, right.y, tank)){
 			return true;//只要这两个点在另一坦克范围内，就算碰撞
 		}
 		return false;
 	}
+
+	public boolean isOverlap(Tank tank){
+		//坦克的六个点
+		Point one = null, two = null, three = null, four = null, centerL = null, centerR = null;
+
+		switch(direction){
+			case Tank.UP://上下四个点坐标一致
+			case Tank.DOWN:
+				one = new Point(x, y);
+				two = new Point(x + 40, y);
+				three = new Point(x, y + 60);
+				four = new Point(x + 40, y + 60);
+				centerL = new Point(x, y + 30);
+				centerR = new Point(x + 40, y + 30);
+				break;
+			case Tank.LEFT://左右四个点坐标一致
+			case Tank.RIGHT:
+				one = new Point(x - 10, y + 10);
+				two = new Point(x - 10, y + 50);
+				three = new Point(x + 50, y + 10);
+				four = new Point(x + 50, y + 50);
+				centerL = new Point(x + 20, y + 10);
+				centerR = new Point(x + 20, y + 50);
+				break;
+			default:
+				System.out.println("坦克不可能有第四个方向！");
+				break;
+		}
+
+		if(isPointInTank(one.x, one.y, tank) || isPointInTank(two.x, two.y, tank) ||
+			isPointInTank(three.x, three.y, tank) || isPointInTank(four.x, four.y, tank) ||
+			isPointInTank(centerL.x, centerL.y, tank) || isPointInTank(centerR.x, centerR.y, tank)){
+			return true;//只要这两个点在另一坦克范围内，就算碰撞
+		}
+		return false;
+	}
+
 
 	public boolean isPointInTank(int x, int y, Tank tank){
 		switch(tank.direction){
@@ -307,8 +337,10 @@ public abstract class Tank extends Thread implements Serializable{
 	class Point{
 		int x;
 		int y;
+
 		public Point(){
 		}
+
 		public Point(int x, int y){
 			this.x = x;
 			this.y = y;
@@ -325,18 +357,21 @@ public abstract class Tank extends Thread implements Serializable{
 				break;
 			case Tank.DOWN:
 				mouthX = x + 20 - ball.getSize() / 2;
-				mouthY = y + 60 - ball.getSize() / 2;;
+				mouthY = y + 60 - ball.getSize() / 2;
+				;
 				break;
 			case Tank.LEFT:
-				mouthX = x - 10 - ball.getSize() / 2;;
+				mouthX = x - 10 - ball.getSize() / 2;
+				;
 				mouthY = y + 30 - ball.getSize() / 2;
 				break;
 			case Tank.RIGHT:
-				mouthX = x + 50 - ball.getSize() / 2;;
+				mouthX = x + 50 - ball.getSize() / 2;
+				;
 				mouthY = y + 30 - ball.getSize() / 2;
 				break;
 		}
-		return new Point(mouthX,mouthY);
+		return new Point(mouthX, mouthY);
 	}
 
 	abstract void fire();
@@ -351,8 +386,6 @@ public abstract class Tank extends Thread implements Serializable{
 
 
 	}
-
-
 
 
 	//getter\setter
