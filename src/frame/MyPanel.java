@@ -148,14 +148,20 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 
 		/*检测是否有被已经死亡的坦克仍然活着的炮弹击中的，
 		由于死掉的坦克已经没有命中增益的表现了，所以所有的废弃坦克可以集中处理炮弹.
+		但是死掉的坦克的炮弹命中，会导致死掉的坦克增加，因此此处不可以使用遍历集合的形式，而是应该先确定一个大小，
+		不检查本轮被击中的坦克的炮弹
 		* */
-
-		for(Tank tank : tankCutCache){
-			for(FireBall ball : tank.getBalls()){
-				if(isHitTarget(ball))
+		int startSize = tankCutCache.size();
+		for(int tankNum = 0; tankNum < startSize; tankNum++){
+			for(FireBall ball : tankCutCache.get(tankNum).getBalls()){
+				if(isHitTarget(ball)){
 					ball.setLive(false);
+				}
 			}
 		}
+
+
+
 
 		for(Enemy enemy : army){//这是防止enemy碰撞其他坦克
 			insureNoOverlap(enemy);
