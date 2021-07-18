@@ -1,5 +1,7 @@
 package tank;
 
+import tool.Waves;
+
 import java.awt.*;
 
 /**
@@ -19,6 +21,7 @@ public class Hero extends Tank{
 
 	@Override
 	public void fire(){
+		new Thread(Waves.HERO_SHORT).start();
 		getBall().setDirection(getDirection());
 		FireBall newBall = FireBall.copyBall(getBall());
 		super.fire(newBall);

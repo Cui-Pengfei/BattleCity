@@ -1,8 +1,12 @@
 package frame;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
+import tool.Waves;
+
 import javax.swing.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -20,13 +24,16 @@ public class GameFrame extends JFrame implements WindowListener{
 	private MyPanel mp = null;
 
 	public GameFrame(){
-		System.out.println("请问重新开始游戏？(y/n)");
+		System.out.println("请问是否继续上一把游戏？(y/n)");
 		Scanner scanner = new Scanner(System.in);
 		char select = scanner.next().charAt(0);
-		if(select == 'y'){
+
+		File file = new File("src/data/Panel.dat");
+
+		if(select == 'y' && file.exists()){//存在存档才会去读取
 			ObjectInputStream ois = null;
 			try{
-				ois = new ObjectInputStream(new FileInputStream("src/data/Panel.dat"));
+				ois = new ObjectInputStream(new FileInputStream(file));
 				Object myPanel = ois.readObject();
 				mp = (MyPanel)myPanel;
 				mp.reStart();
@@ -40,7 +47,7 @@ public class GameFrame extends JFrame implements WindowListener{
 						System.out.println("关闭对象输入流异常：" + e);
 					}
 			}
-		}else{
+		}else{//不存在存档就去新开一局游戏，存档后自然会新建那个文件
 			mp = new MyPanel();
 		}
 
@@ -55,6 +62,7 @@ public class GameFrame extends JFrame implements WindowListener{
 
 		Thread panelThread = new Thread(mp);//面板线程启动，目的是刷新
 		panelThread.start();
+
 	}
 
 	/**
@@ -68,6 +76,7 @@ public class GameFrame extends JFrame implements WindowListener{
 	public void windowClosing(WindowEvent e) {
 		mp.warStop();//关闭游戏就先静止
 		mp.saveWar();//保存游戏后关闭窗口
+		System.out.println("关闭窗口，保存游戏成功！");
 	}
 
 	@Override

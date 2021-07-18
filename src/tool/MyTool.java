@@ -1,8 +1,5 @@
 package tool;
 
-import data.Record;
-import frame.GameFrame;
-import org.junit.Test;
 import tank.Boss;
 import tank.FireBall;
 import tank.Tank;
@@ -60,6 +57,21 @@ public class MyTool{
 
 
 
+	}
+
+	public static int reverseDirection(int direction){
+		switch(direction){
+			case Tank.UP:
+				return Tank.DOWN;
+			case Tank.DOWN:
+				return Tank.UP;
+			case Tank.LEFT:
+				return Tank.RIGHT;
+			case Tank.RIGHT:
+				return Tank.LEFT;
+			default:
+				return 0;
+		}
 	}
 
 

@@ -1,8 +1,10 @@
 package frame;
 
-import data.Record;
+import tool.Bomb;
+import tool.Record;
 import tank.*;
 import tool.MyTool;
+import tool.Waves;
 
 import javax.swing.*;
 import java.awt.*;
@@ -47,15 +49,32 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 
 	private Record record = new Record(WAR_WIDTH + 30, 30);//战场记录仪 边缘各让出30宽度，为了美观
 
+
+	private final Vector<Bomb> bombs = new Vector<>();//所有爆炸对象的集合
+	private transient Image image1 =
+			Toolkit.getDefaultToolkit().getImage("src/data/bomb_1.gif");//大
+	private transient Image image2 =
+			Toolkit.getDefaultToolkit().getImage("src/data/bomb_2.gif");
+	private transient Image image3 =
+			Toolkit.getDefaultToolkit().getImage("src/data/bomb_3.gif");//小
+
 	{
 		/*战场计时器开始计时*/
 		record.setGameStartTime(System.currentTimeMillis());
+		//开启音乐
+		new Thread(Waves.START_MUSIC).start();
 	}
+
 
 	/**
 	 * 继续上一局游戏，从文件中读出上一局记录的对象流，相关进程激活,毕竟保存进去的都是死进程的数据.
 	 */
 	public void reStart(){
+		/*加载资源*/
+		image1 = Toolkit.getDefaultToolkit().getImage("src/data/bomb_1.gif");//大
+		image2 = Toolkit.getDefaultToolkit().getImage("src/data/bomb_2.gif");
+		image3 =Toolkit.getDefaultToolkit().getImage("src/data/bomb_3.gif");//小
+
 		/*重新开始时，记录的时间需要注意:
 		继续上一把游戏的时候，开始时间既不是现在的时间，也不是过去的那个开始时间，
 		而是现在时间 - 上一把持续时间
@@ -192,22 +211,6 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 			}
 		}
 
-
-////////////////////////////////////////////////////////////////坦克很多时会出现异常
-/*		for(Enemy enemy : army){
-			if(enemy.isLive())//存活的坦克才能绘制出来
-				MyTool.drawTank(g, enemy);
-			//绘制敌方炮弹
-			Vector<FireBall> balls = enemy.getBalls();
-			if(balls.size() != 0){
-				for(FireBall ball : balls){
-					if(ball.isLive())//只有存活的炮弹才能被刷新
-						MyTool.drawFire(g, ball);//把每个炮弹都画出来
-				}
-			}
-		}//敌方·普通坦克*/
-
-
 		//绘制Boss 及炮弹
 		for(Boss boss1 : bosses){
 			if(boss1.isLive())
@@ -260,8 +263,26 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 		bosses.removeAll(bossCutCache);
 		bossCutCache.clear();
 
+		//画出所有爆炸对象
+		if(bombs.size() != 0)
+		for(Bomb bomb : bombs){
+			bomb.lifDown();
+			if(bomb.isLive())
+				drawBomb(g, bomb);
+		}
 
 	}//end paint()
+
+	private void drawBomb(Graphics g, Bomb bomb){
+		if(bomb.getLife() > 60){
+			g.drawImage(image1, bomb.getX(), bomb.getY(), 60, 60, this);
+		}else if(bomb.getLife() > 30){
+			g.drawImage(image2, bomb.getX(), bomb.getY(), 60, 60, this);
+		}else{
+			g.drawImage(image3, bomb.getX(), bomb.getY(), 60, 60, this);
+		}
+
+	}
 
 	private void turnBoss(Enemy enemy, Vector<Boss> bosses){
 		Boss thisBoss = new Boss(enemy.getX(), enemy.getY(), enemy.getDirection());
@@ -326,25 +347,34 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 					Boss boss = (Boss) tank;//此处boss就近原则，遮盖掉了全局变量
 					boss.lessBlood();
 					if(boss.getBlood() == 0){
+						new Thread(Waves.BOMB).start();//击毁音效
 						record.destroyBossNumPlus();//击杀boss加一
 						boss.setLive(false);
 						bossCutCache.add(boss);
+						bombs.add(new Bomb(boss.getX(), boss.getY()));//加入一个爆炸对象
+					}else{
+						new Thread(Waves.BOSS_HURT).start();//打伤音效
 					}
 					//击中hero
 				}else if(tank.getType() == Tank.HERO){//hero被击中，会立刻销毁，子弹所带来的回馈不在此处完成
+					new Thread(Waves.HERO_DIE).start();//击毁音效
 					tank.setLive(false);
 					tankCutCache.add(tank);
 					record.deathPlus();//死亡次数加一
+					bombs.add(new Bomb(tank.getX(), tank.getY()));//加入一个爆炸对象
 					//击中enemy
 				}else{//如果被击中的是enemy，那要看是被谁击中的？
 					Enemy enemy = (Enemy) tank;
 					if(ball.getType() == Tank.BOSS){//被Boss击中，enemy获得增益，加血
+						new Thread(Waves.TURN_BOSS).start();//变boss音效
 						turnBoss(enemy, bossAddCache);
 						return false;//boss击中enemy没有回馈
 					}else{//不然就是hero打击的，就死掉了，不可能是自己打的，一开始就限定了坦克类型
+						new Thread(Waves.BOMB).start();//击毁音效
 						tank.setLive(false);
 						armyCutCache.add(enemy);
 						record.destroyEnemyNumPlus();//击杀enemy加一
+						bombs.add(new Bomb(tank.getX(), tank.getY()));//加入一个爆炸对象
 					}
 				}
 				return true;//只要击中任意一个坦克，都不会再去检测其他坦克了
@@ -478,7 +508,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 					army.add(enemy);
 				}
 				if(bornTank instanceof Boss){
-					Boss boss = (Boss)bornTank;
+					Boss boss = (Boss) bornTank;
 					bosses.add(boss);
 				}
 
@@ -520,6 +550,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 				warStop();
 				break;
 			case KeyEvent.VK_B://启动画面
+				warStatic = false;
 				for(Enemy enemy : army){
 					enemy.setStop(false);
 					for(FireBall ball : enemy.getBalls()){
@@ -579,7 +610,7 @@ public class MyPanel extends JPanel implements KeyListener, Runnable, Serializab
 				record.setGameEndTime(System.currentTimeMillis());
 			}
 
-			if(army.size() < enemyNum){//只要小于额定的数量，就补充一辆坦克
+			if(army.size() < enemyNum && army.size() != 0){//只要小于额定的数量，就补充一辆坦克 enemy全部消失的话，就不补充了
 				if(bosses.size() < 30){
 					if(!aTankBornRandom(Tank.ENEMY)){
 						if(army.size() != 0)

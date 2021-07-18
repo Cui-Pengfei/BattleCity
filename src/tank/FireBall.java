@@ -1,6 +1,8 @@
 package tank;
 
 import frame.GameFrame;
+import tool.MyTool;
+import tool.Waves;
 
 import java.awt.*;
 import java.io.Serializable;
@@ -97,8 +99,15 @@ public class FireBall extends Thread implements Serializable{
 			}catch(InterruptedException e){
 				e.printStackTrace();
 			}
-			if(x < 0 || x > GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH || y < 0 || y > GameFrame.SCREEN_HEIGHT){//炮弹超出战场就退线程
-				live = false;
+
+			if(x < 0 || x > GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH
+					|| y < 0 || y > GameFrame.SCREEN_HEIGHT){//炮弹超出战场
+				if(type == Tank.HERO){//Hero子弹会反弹
+					new Thread(Waves.BOSS_HURT).start();//撞墙音效
+					direction = MyTool.reverseDirection(direction);
+				}else{
+					live = false;//其他炮弹消亡
+				}
 				//break;
 			}
 		}

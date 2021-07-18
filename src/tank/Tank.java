@@ -353,21 +353,19 @@ public abstract class Tank extends Thread implements Serializable{
 		switch(direction){//不同方向要不同地调整像素，保证炮弹从炮口射出
 			case Tank.UP:
 				mouthX = x + 20 - ball.getSize() / 2;
-				mouthY = y - ball.getSize() / 2;
+				mouthY = y;
 				break;
 			case Tank.DOWN:
 				mouthX = x + 20 - ball.getSize() / 2;
-				mouthY = y + 60 - ball.getSize() / 2;
+				mouthY = y + 60 - ball.getSize();
 				;
 				break;
 			case Tank.LEFT:
-				mouthX = x - 10 - ball.getSize() / 2;
-				;
+				mouthX = x - 10;
 				mouthY = y + 30 - ball.getSize() / 2;
 				break;
 			case Tank.RIGHT:
-				mouthX = x + 50 - ball.getSize() / 2;
-				;
+				mouthX = x + 50 - ball.getSize();
 				mouthY = y + 30 - ball.getSize() / 2;
 				break;
 		}
