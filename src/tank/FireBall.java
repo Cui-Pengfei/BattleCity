@@ -21,7 +21,10 @@ public class FireBall extends Thread implements Serializable{
 	private int type;//哪种坦克的炮弹
 	private boolean live = true;//炮弹是否存活
 	private int speed;//越大速度越快
-	private boolean stop = false;
+	private boolean stop = false;//是否暂停
+
+	private int REFLECT_TIME = 3;//能反射的子弹最多也反射三次
+
 
 	public FireBall(int x, int y, int type, int direction, int size, Color color){
 		this.color = color;
@@ -102,9 +105,10 @@ public class FireBall extends Thread implements Serializable{
 
 			if(x < 0 || x > GameFrame.SCREEN_WIDTH - GameFrame.RECORD_WIDTH
 					|| y < 0 || y > GameFrame.SCREEN_HEIGHT){//炮弹超出战场
-				if(type == Tank.HERO){//Hero子弹会反弹
+				if(type == Tank.HERO && REFLECT_TIME > 0){//Hero子弹会反弹
 					new Thread(Waves.BOSS_HURT).start();//撞墙音效
-					direction = MyTool.reverseDirection(direction);
+					direction = MyTool.reverseDirection(direction);//反射
+					REFLECT_TIME--;
 				}else{
 					live = false;//其他炮弹消亡
 				}

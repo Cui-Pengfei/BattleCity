@@ -8,12 +8,15 @@ import java.awt.*;
  */
 public class Boss extends Tank{
 	private int blood = 5;//血量设置，打掉5滴血才会死掉，还会根据血量改变颜色
+	private static int number;
 
 	{//初始化器
 		setType(Tank.BOSS);
 		setSpeed(2);
 		setBall(new FireBall(15,Color.RED, Tank.BOSS, 10));
-		setName("boss");
+		setName("boss" + number);
+		number++;
+
 	}
 
 	public Boss(int x, int y, int direction){

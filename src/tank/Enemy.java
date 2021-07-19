@@ -15,7 +15,7 @@ public class Enemy extends Tank{
 		setType(Tank.ENEMY);
 		getBall().setType(Tank.ENEMY);
 		setName("enemy" + number);
-		number++;
+		number++;//给不同的enemy编号
 	}
 
 	public Enemy(){
